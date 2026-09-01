@@ -1,0 +1,316 @@
+{% extends 'base.html' %}
+
+{% block title %}HOD Executive Portal • Spatial AI Campus{% endblock %}
+
+{% block content %}
+<div class="glass-panel stagger">
+
+    <!-- Top Bar -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div class="d-flex align-items-center gap-3">
+            <div class="avatar-circle fs-3 fw-bold text-dark" style="width: 58px; height: 58px; background: rgba(251, 191, 36, 0.25); border: 2px solid var(--amber); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 25px var(--amber-glow);">
+                <i class="bi bi-person-workspace text-amber fs-3"></i>
+            </div>
+            <div>
+                <span class="badge-glass badge-amber mb-1">HOD EXECUTIVE PORTAL</span>
+                <h3 class="fw-bold font-display text-white mb-0">AIML Department Overview</h3>
+                <span class="small text-white-50 font-mono">Nehru Institute of Technology (Autonomous) • CSE (AIML)</span>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <div class="glass-card py-2 px-3 d-flex align-items-center gap-2">
+                <i class="bi bi-calendar-event text-amber"></i>
+                <span class="small text-white font-mono">{{ today_day }}, {{ today_date }}</span>
+            </div>
+            <a href="{{ url_for('hod.timetable') }}" class="btn btn-glass btn-amber btn-magnetic py-2 px-3 small d-flex align-items-center gap-2">
+                <i class="bi bi-calendar-week-fill"></i> Timetable CRUD
+            </a>
+            <a href="{{ url_for('hod.reports') }}" class="btn btn-glass btn-magnetic py-2 px-3 small d-flex align-items-center gap-2">
+                <i class="bi bi-file-earmark-bar-graph text-amber"></i> Reports &amp; CSV
+            </a>
+        </div>
+    </div>
+
+    <!-- 4 Key Stat Metrics Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="glass-card tilt-card holo-card card-accent-cyan p-4 text-center h-100">
+                <div class="tilt-shine"></div>
+                <span class="small text-white-50 font-mono d-block mb-1">TOTAL ENROLLED</span>
+                <div class="display-5 fw-bold text-white font-display" data-count="{{ student_count }}">{{ student_count }}</div>
+                <span class="badge-glass badge-cyan mt-1 font-mono">Class I B.E II AIML</span>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="glass-card tilt-card holo-card card-accent-purple p-4 text-center h-100">
+                <div class="tilt-shine"></div>
+                <span class="small text-white-50 font-mono d-block mb-1">FACULTY PRESENT</span>
+                <div class="display-5 fw-bold text-purple font-display" data-count="{{ faculty_morning_count }}">{{ faculty_morning_count }}</div>
+                <span class="small text-white-50 font-mono">of {{ faculty_count }} Total Faculty</span>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="glass-card tilt-card holo-card card-accent-amber p-4 text-center h-100">
+                <div class="tilt-shine"></div>
+                <span class="small text-white-50 font-mono d-block mb-1">ACTIVE SUBJECTS</span>
+                <div class="display-5 fw-bold text-amber font-display" data-count="{{ subject_count }}">{{ subject_count }}</div>
+                <span class="small text-white-50 font-mono">Curriculum Syllabus</span>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="glass-card tilt-card holo-card card-accent-green p-4 text-center h-100">
+                <div class="tilt-shine"></div>
+                <span class="small text-white-50 font-mono d-block mb-1">DEPARTMENT AVERAGE</span>
+                <div class="display-5 fw-bold text-green font-display" data-count="88.2">88.2%</div>
+                <span class="badge-glass badge-green mt-1 font-mono">Exam Clearance</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2-Column Grid: Left Daily Matrix & Right Attendance Risk Indicator -->
+    <div class="row g-4 mb-4">
+        
+        <!-- Left: Daily 7-Hour Academic Attendance Matrix -->
+        <div class="col-12 col-lg-8">
+            <div class="glass-card tilt-card h-100 p-0 overflow-hidden">
+                <div class="tilt-shine"></div>
+                <div class="p-3 border-bottom border-white-10 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <div>
+                        <h6 class="fw-bold text-white mb-0 font-display">
+                            <i class="bi bi-grid-3x3-gap-fill text-amber me-2"></i>Daily 7-Hour Academic Attendance Matrix
+                        </h6>
+                        <span class="small text-white-50 font-mono">Click "Drill Down" on any hour row to inspect student biometric logs</span>
+                    </div>
+                    <span class="badge-glass badge-white font-mono">{{ today_day }} Schedule</span>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="glass-table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-4">Hour</th>
+                                <th>Timing</th>
+                                <th>Subject</th>
+                                <th>Faculty</th>
+                                <th>State</th>
+                                <th>Attendance</th>
+                                <th class="text-end pe-4">Drill Down</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if hour_matrix %}
+                                {% for item in hour_matrix %}
+                                    <tr>
+                                        <td class="ps-4">
+                                            <span class="badge-glass badge-amber font-mono">Hour {{ item.slot.hour_number }}</span>
+                                        </td>
+                                        <td class="small font-mono text-white-50">
+                                            {{ item.slot.start_time.strftime('%I:%M %p') }}
+                                        </td>
+                                        <td>
+                                            <strong class="text-white font-display">{{ item.slot.subject.short_name }}</strong>
+                                            <div class="small text-white-50 font-mono" style="font-size: 0.72rem;">{{ item.slot.subject.subject_name }}</div>
+                                        </td>
+                                        <td class="fw-semibold text-white small font-display">{{ item.slot.faculty.user.name }}</td>
+                                        <td>
+                                            {% if item.status == 'IN_PROGRESS' %}
+                                                <span class="badge-glass badge-live">
+                                                    <span class="pulse-dot me-1"></span> LIVE
+                                                </span>
+                                            {% elif item.status == 'COMPLETED' %}
+                                                <span class="badge-glass badge-green">
+                                                    CLOSED &check;
+                                                </span>
+                                            {% else %}
+                                                <span class="badge-glass badge-white">
+                                                    PENDING
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="fw-bold text-green font-mono">
+                                            {{ item.present_count }} / {{ item.total_students }}
+                                        </td>
+                                        <td class="text-end pe-4">
+                                            {% if item.session %}
+                                                <button class="btn btn-glass btn-sm py-1 px-3 font-mono" onclick="openSessionDrilldown({{ item.session.id }})">
+                                                    <i class="bi bi-eye me-1 text-amber"></i> Drill Down
+                                                </button>
+                                            {% else %}
+                                                <span class="text-white-50 small font-mono">-</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-4 text-white-50 font-mono">No classes scheduled for today.</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Low Attendance Risk Indicator -->
+        <div class="col-12 col-lg-4">
+            <div class="glass-card tilt-card h-100 p-4 d-flex flex-column justify-content-between">
+                <div class="tilt-shine"></div>
+                <div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold text-white mb-0 font-display">
+                            <i class="bi bi-shield-exclamation text-amber me-2"></i>Attendance Risk Monitor
+                        </h6>
+                        <span class="badge-glass badge-red font-mono">&lt; 75% Risk</span>
+                    </div>
+
+                    <p class="small text-white-50 mb-3 font-mono" style="font-size: 0.76rem;">
+                        Real-time student eligibility tracking requiring academic advisory:
+                    </p>
+
+                    <div class="d-flex flex-column gap-2 mb-3">
+                        <div class="risk-card risk-high">
+                            <div>
+                                <strong class="text-white small d-block font-display">Rahul Verma</strong>
+                                <span class="text-white-50 font-mono" style="font-size: 0.72rem;">AIML004 (Sec A)</span>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge-glass badge-red font-mono">HIGH RISK</span>
+                                <strong class="text-red font-mono d-block mt-1">64.0%</strong>
+                            </div>
+                        </div>
+
+                        <div class="risk-card risk-medium">
+                            <div>
+                                <strong class="text-white small d-block font-display">Parthiban</strong>
+                                <span class="text-white-50 font-mono" style="font-size: 0.72rem;">AIML001 (Sec A)</span>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge-glass badge-amber font-mono">MED RISK</span>
+                                <strong class="text-amber font-mono d-block mt-1">72.5%</strong>
+                            </div>
+                        </div>
+
+                        <div class="risk-card risk-low">
+                            <div>
+                                <strong class="text-white small d-block font-display">Aarav Sharma</strong>
+                                <span class="text-white-50 font-mono" style="font-size: 0.72rem;">AIML002 (Sec A)</span>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge-glass badge-green font-mono">CLEARED</span>
+                                <strong class="text-green font-mono d-block mt-1">92.0%</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <a href="{{ url_for('hod.reports') }}" class="btn btn-glass btn-magnetic w-100 py-2 small fw-semibold text-center font-display">
+                    <i class="bi bi-file-earmark-bar-graph me-1"></i> Full Department Analytics &amp; CSV
+                </a>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Session Drilldown Modal (Glass L4) -->
+<div class="modal fade glass-modal" id="drilldownModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-bottom border-white-10 py-3 px-4">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-people-fill fs-4 text-amber"></i>
+                    <div>
+                        <h5 class="modal-title fw-bold font-display text-white mb-0" id="modalSubjectTitle">Session Student Verification Drill-down</h5>
+                        <span class="small text-white-50 font-mono" id="modalSessionSubtitle">Class: I B.E II AIML</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body p-4">
+                <div class="p-3 rounded-4 mb-3" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12);">
+                    <div class="row g-2 small text-white-50 font-mono">
+                        <div class="col-6">Faculty In-charge: <strong id="modalFacultyName" class="text-white d-block font-display"></strong></div>
+                        <div class="col-6">Time Window: <strong id="modalTimeWindow" class="text-white d-block"></strong></div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="glass-table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-4">Roll No</th>
+                                <th>Student Name</th>
+                                <th>Scan Time</th>
+                                <th>Distance</th>
+                                <th class="text-end pe-4">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modalScansTableBody">
+                            <tr>
+                                <td colspan="5" class="text-center py-3 text-white-50 font-mono">Loading student scan records...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="modal-footer border-top border-white-10 p-3">
+                <button type="button" class="btn btn-glass px-4" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function openSessionDrilldown(sessionId) {
+    const modalEl = document.getElementById('drilldownModal');
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+
+    const tbody = document.getElementById('modalScansTableBody');
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3 text-white-50 font-mono"><span class="spinner-border spinner-border-sm text-amber me-2"></span> Fetching biometric records...</td></tr>';
+
+    fetch(`/hod/api/session-details/${sessionId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-red py-3 font-mono">${data.error}</td></tr>`;
+                return;
+            }
+
+            document.getElementById('modalSubjectTitle').innerText = `${data.subject_name} (${data.subject_short}) - Hour ${data.hour_number}`;
+            document.getElementById('modalSessionSubtitle').innerText = `Date: ${data.session_date} • Department: CSE (AIML)`;
+            document.getElementById('modalFacultyName').innerText = data.faculty_name;
+            document.getElementById('modalTimeWindow').innerText = `${data.opened_at} – ${data.closed_at}`;
+
+            if (data.records && data.records.length > 0) {
+                let html = '';
+                data.records.forEach(r => {
+                    const statusBadge = r.status === 'PRESENT' ? '<span class="badge-glass badge-green font-mono">PRESENT &check;</span>' : `<span class="badge-glass badge-red font-mono">REJECTED (${r.rejection_reason || ''})</span>`;
+                    html += `
+                        <tr>
+                            <td class="ps-4"><span class="badge-glass badge-white font-mono">${r.student_id}</span></td>
+                            <td class="fw-semibold text-white font-display">${r.student_name}</td>
+                            <td class="small text-white-50 font-mono">${r.scanned_at}</td>
+                            <td class="small text-white-50 font-mono">${r.distance_m !== null ? r.distance_m + 'm' : 'N/A'}</td>
+                            <td class="text-end pe-4">${statusBadge}</td>
+                        </tr>
+                    `;
+                });
+                tbody.innerHTML = html;
+            } else {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-white-50 font-mono">No student scans recorded in this session yet.</td></tr>';
+            }
+        })
+        .catch(err => {
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center text-red py-3 font-mono">Error fetching drilldown: ${err}</td></tr>`;
+        });
+}
+</script>
+{% endblock %}

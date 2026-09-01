@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+
+{% block title %}Live Attendance Feed • HOD Executive Portal{% endblock %}
+
+{% block content %}
+<div class="glass-panel stagger">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-3">
+            <a href="{{ url_for('hod.dashboard') }}" class="btn btn-glass rounded-circle p-2" title="Back to Dashboard">
+                <i class="bi bi-arrow-left fs-5"></i>
+            </a>
+            <div>
+                <span class="badge-glass badge-amber mb-1">HOD ATTENDANCE AUDIT</span>
+                <h4 class="fw-bold font-display text-white mb-0">Daily Sessions &amp; Biometric Audit Feed</h4>
+                <span class="small text-white-50 font-mono">Filter Snapshot Date: {{ filter_date }}</span>
+            </div>
+        </div>
+
+        <form method="GET" action="{{ url_for('hod.attendance') }}" class="d-flex gap-2 align-items-center">
+            <input type="date" class="glass-input py-1 px-3 small w-auto font-mono" id="filterDate" name="date" value="{{ filter_date }}">
+            <button type="submit" class="btn btn-glass btn-amber py-1 px-3 small font-display">Filter</button>
+        </form>
+    </div>
+
+    <!-- Class Attendance Sessions -->
+    <div class="glass-card tilt-card p-0 overflow-hidden mb-4">
+        <div class="tilt-shine"></div>
+        <div class="p-3 border-bottom border-white-10 d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <h6 class="fw-bold text-white mb-0 font-display">
+                <i class="bi bi-broadcast text-amber me-2"></i>Classroom Face Attendance Sessions on {{ filter_date }}
+            </h6>
+            <div class="table-search-wrap">
+                <i class="bi bi-search search-icon"></i>
+                <input type="text" class="glass-input table-search-input py-1" placeholder="Filter classroom..." data-table-search="hodClassSessionsTable">
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="glass-table align-middle mb-0" id="hodClassSessionsTable">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Hour</th>
+                        <th>Subject</th>
+                        <th>Faculty</th>
+                        <th>GPS Telemetry</th>
+                        <th>Opened</th>
+                        <th>Closed</th>
+                        <th class="text-end pe-4">State</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if sessions %}
+                        {% for sess in sessions %}
+                            <tr>
+                                <td class="ps-4">
+                                    <span class="badge-glass badge-amber font-mono">Hour {{ sess.timetable_entry.hour_number if sess.timetable_entry else 'N/A' }}</span>
+                                </td>
+                                <td>
+                                    <strong class="text-white font-display">{{ sess.timetable_entry.subject.short_name if sess.timetable_entry and sess.timetable_entry.subject else 'General' }}</strong>
+                                    <div class="small text-white-50 font-mono" style="font-size: 0.72rem;">{{ sess.timetable_entry.subject.subject_name if sess.timetable_entry and sess.timetable_entry.subject else '' }}</div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-white font-display">{{ sess.faculty.user.name if sess.faculty and sess.faculty.user else 'N/A' }}</div>
+                                </td>
+                                <td class="small text-white-50 font-mono">
+                                    {% if sess.faculty_lat and sess.faculty_lng %}
+                                        {{ sess.faculty_lat|round(4) }}, {{ sess.faculty_lng|round(4) }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td class="small text-white-50 font-mono">{{ sess.opened_at.strftime('%I:%M:%S %p') if sess.opened_at else '' }}</td>
+                                <td class="small text-white-50 font-mono">{{ sess.closed_at.strftime('%I:%M:%S %p') if sess.closed_at else 'Active' }}</td>
+                                <td class="text-end pe-4">
+                                    {% if sess.status == 'OPEN' %}
+                                        <span class="badge-glass badge-live">LIVE</span>
+                                    {% elif sess.status == 'CLOSED' %}
+                                        <span class="badge-glass badge-green">CLOSED</span>
+                                    {% else %}
+                                        <span class="badge-glass badge-amber font-mono">{{ sess.status }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-white-50 font-mono">
+                                No attendance sessions conducted on {{ filter_date }}.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Faculty Biometric Check-ins -->
+    <div class="glass-card tilt-card p-0 overflow-hidden">
+        <div class="tilt-shine"></div>
+        <div class="p-3 border-bottom border-white-10 d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <h6 class="fw-bold text-white mb-0 font-display">
+                <i class="bi bi-person-badge text-amber me-2"></i>Faculty Face Recognition Logs on {{ filter_date }}
+            </h6>
+            <div class="table-search-wrap">
+                <i class="bi bi-search search-icon"></i>
+                <input type="text" class="glass-input table-search-input py-1" placeholder="Filter faculty..." data-table-search="hodFacLogsTable">
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="glass-table align-middle mb-0" id="hodFacLogsTable">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Faculty Name</th>
+                        <th>Staff ID</th>
+                        <th>Type</th>
+                        <th>Scanned Time</th>
+                        <th>GPS Telemetry</th>
+                        <th class="text-end pe-4">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if faculty_attendances %}
+                        {% for fa in faculty_attendances %}
+                            <tr>
+                                <td class="ps-4 fw-semibold text-white font-display">{{ fa.faculty.user.name if fa.faculty and fa.faculty.user else 'N/A' }}</td>
+                                <td><span class="badge-glass badge-white font-mono">{{ fa.faculty.faculty_id if fa.faculty else '' }}</span></td>
+                                <td>
+                                    {% if fa.attendance_type == 'FACULTY_MORNING' %}
+                                        <span class="badge-glass badge-cyan font-mono">Morning Check-in</span>
+                                    {% else %}
+                                        <span class="badge-glass badge-purple font-mono">Evening Check-out</span>
+                                    {% endif %}
+                                </td>
+                                <td class="small text-white-50 font-mono">{{ fa.scanned_at.strftime('%I:%M:%S %p') if fa.scanned_at else '' }}</td>
+                                <td class="small text-white-50 font-mono">
+                                    {% if fa.latitude and fa.longitude %}
+                                        {{ fa.latitude|round(4) }}, {{ fa.longitude|round(4) }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-4"><span class="badge-glass badge-green font-mono">PRESENT &check;</span></td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-white-50 font-mono">
+                                No faculty check-ins logged on {{ filter_date }}.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

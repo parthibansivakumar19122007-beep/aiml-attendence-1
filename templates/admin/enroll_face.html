@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}Biometric Face Enrollment • Admin Console{% endblock %}
+
+{% block content %}
+<div class="glass-panel stagger" style="max-width: 680px;">
+
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <a href="{% if role == 'STUDENT' %}{{ url_for('admin.students') }}{% else %}{{ url_for('admin.faculty') }}{% endif %}" class="btn btn-glass rounded-circle p-2" title="Back">
+      <i class="bi bi-arrow-left fs-5"></i>
+    </a>
+    <div>
+      <span class="badge-glass badge-cyan mb-1">BIOMETRIC AI ENROLLMENT</span>
+      <h4 class="fw-bold font-display text-white mb-0">Enroll Facial Embedding Vector</h4>
+      <span class="text-white-50 small font-mono">128-Dimensional Cosine Neural Mesh Registration</span>
+    </div>
+  </div>
+
+  <!-- Target Identity Card -->
+  <div class="glass-card tilt-card holo-card card-accent-cyan p-4 mb-4">
+    <div class="tilt-shine"></div>
+    <div class="d-flex align-items-center gap-3">
+      <div class="avatar-circle fs-3 fw-bold text-cyan" style="width: 52px; height: 52px; background: rgba(34,211,238,0.18); border: 2px solid var(--cyan); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+        {{ person.user.name[0] if person and person.user else '?' }}
+      </div>
+      <div>
+        <h5 class="fw-bold text-white font-display mb-0">{{ person.user.name if person and person.user else 'N/A' }}</h5>
+        <div class="small text-white-50 font-mono">
+          ID: <strong class="text-white">{% if role == 'STUDENT' %}{{ person.student_id }}{% else %}{{ person.faculty_id }}{% endif %}</strong> • Email: <strong class="text-white">{{ person.user.email if person and person.user else '' }}</strong> • Role: <span class="badge-glass badge-cyan">{{ role }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Upload & Enrollment Form -->
+  <div class="glass-card tilt-card p-4">
+    <div class="tilt-shine"></div>
+    <form method="POST" enctype="multipart/form-data" id="enrollForm">
+      <input type="file" name="photo" id="facePhotoInput" class="d-none" accept="image/*" required>
+
+      <!-- Drag & Drop Upload Zone -->
+      <div class="drop-zone mb-4" data-input="facePhotoInput">
+        <img id="facePreviewImg" class="drop-preview" alt="Face Preview">
+        <div class="drop-icon text-cyan">
+          <i class="bi bi-cloud-arrow-up-fill"></i>
+        </div>
+        <h6 class="fw-bold text-white font-display mb-1">Drag &amp; Drop Face Portrait Here</h6>
+        <p class="text-white-50 small font-mono mb-2">or click to browse clear front-facing photo (JPG, PNG, WEBP)</p>
+        <span class="badge-glass badge-white font-mono" style="font-size: 0.68rem;">NEURAL EMBEDDING COMPUTED WITH 128-DIM OPENCV DNN ENGINE</span>
+      </div>
+
+      <button type="submit" class="btn btn-glass btn-cyan btn-magnetic w-100 py-3 font-display fs-6" id="btnSubmitEnroll">
+        <i class="bi bi-cpu-fill fs-5"></i> [ EXTRACT &amp; COMMIT FACE EMBEDDING ]
+      </button>
+    </form>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.getElementById('enrollForm').addEventListener('submit', function() {
+    const btn = document.getElementById('btnSubmitEnroll');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Computing 128-Dim Neural Vector...';
+});
+</script>
+{% endblock %}

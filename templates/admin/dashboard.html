@@ -1,0 +1,232 @@
+{% extends 'base.html' %}
+
+{% block title %}Master Control Panel • System Administrator{% endblock %}
+
+{% block content %}
+<div class="glass-panel stagger">
+
+    <!-- Header Bar -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div class="d-flex align-items-center gap-3">
+            <div class="avatar-circle fs-3 fw-bold text-green" style="width: 58px; height: 58px; background: rgba(52, 211, 153, 0.2); border: 2px solid var(--green); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 25px var(--green-glow);">
+                <i class="bi bi-shield-fill-check"></i>
+            </div>
+            <div>
+                <span class="badge-glass badge-green mb-1">SYSTEM MASTER</span>
+                <h3 class="fw-bold font-display text-white mb-0">Admin Master Control Panel</h3>
+                <span class="small text-white-50 font-mono">Nehru Institute of Technology • CSE (AIML) Master Database</span>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <span class="badge-glass badge-green font-mono">
+                <i class="bi bi-cpu-fill me-1"></i>ENGINE: {{ face_status.backend|upper }}
+            </span>
+            <div class="glass-card py-2 px-3 d-flex align-items-center gap-2">
+                <i class="bi bi-person-circle text-green"></i>
+                <span class="small text-white font-mono">{{ current_user.name if current_user else 'System Administrator' }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4 Animated Stats Cards Grid -->
+    <div class="row g-4 mb-4">
+        <div class="col-6 col-md-3">
+            <a href="{{ url_for('admin.students') }}" class="text-decoration-none">
+                <div class="glass-card tilt-card holo-card card-accent-cyan p-4 text-center h-100">
+                    <div class="tilt-shine"></div>
+                    <div class="stat-icon mx-auto" style="background: rgba(34,211,238,0.18); color: var(--cyan);">
+                        <i class="bi bi-people-fill fs-3"></i>
+                    </div>
+                    <div class="display-5 fw-bold text-white font-display" data-count="{{ total_students }}">{{ total_students }}</div>
+                    <span class="small text-white-50 mt-1 d-block font-mono">ENROLLED STUDENTS</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-6 col-md-3">
+            <a href="{{ url_for('admin.faculty') }}" class="text-decoration-none">
+                <div class="glass-card tilt-card holo-card card-accent-purple p-4 text-center h-100">
+                    <div class="tilt-shine"></div>
+                    <div class="stat-icon mx-auto" style="background: rgba(167,139,250,0.18); color: var(--purple);">
+                        <i class="bi bi-person-video3 fs-3"></i>
+                    </div>
+                    <div class="display-5 fw-bold text-purple font-display" data-count="{{ total_faculty }}">{{ total_faculty }}</div>
+                    <span class="small text-white-50 mt-1 d-block font-mono">FACULTY MEMBERS</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-6 col-md-3">
+            <a href="{{ url_for('admin.subjects') }}" class="text-decoration-none">
+                <div class="glass-card tilt-card holo-card card-accent-amber p-4 text-center h-100">
+                    <div class="tilt-shine"></div>
+                    <div class="stat-icon mx-auto" style="background: rgba(251,191,36,0.18); color: var(--amber);">
+                        <i class="bi bi-journal-bookmark-fill fs-3"></i>
+                    </div>
+                    <div class="display-5 fw-bold text-amber font-display" data-count="{{ total_subjects }}">{{ total_subjects }}</div>
+                    <span class="small text-white-50 mt-1 d-block font-mono">ACTIVE SUBJECTS</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-6 col-md-3">
+            <a href="{{ url_for('hod.timetable') }}" class="text-decoration-none">
+                <div class="glass-card tilt-card holo-card card-accent-green p-4 text-center h-100">
+                    <div class="tilt-shine"></div>
+                    <div class="stat-icon mx-auto" style="background: rgba(52,211,153,0.18); color: var(--green);">
+                        <i class="bi bi-calendar-week-fill fs-3"></i>
+                    </div>
+                    <div class="display-5 fw-bold text-green font-display" data-count="{{ total_timetable }}">{{ total_timetable }}</div>
+                    <span class="small text-white-50 mt-1 d-block font-mono">TIMETABLE SLOTS</span>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Quick Actions Strip -->
+    <div class="glass-card tilt-card p-4 mb-4">
+        <div class="tilt-shine"></div>
+        <h6 class="fw-bold text-white mb-3 font-display">
+            <i class="bi bi-lightning-charge-fill text-green me-2"></i>Quick Administrative Actions
+        </h6>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{{ url_for('admin.add_student') }}" class="btn btn-glass btn-cyan btn-magnetic py-2 px-3 fw-semibold small font-display d-flex align-items-center gap-2">
+                <i class="bi bi-person-plus-fill"></i> Add Student
+            </a>
+            <a href="{{ url_for('admin.add_faculty') }}" class="btn btn-glass btn-purple btn-magnetic py-2 px-3 fw-semibold small font-display d-flex align-items-center gap-2">
+                <i class="bi bi-person-badge-fill"></i> Add Faculty
+            </a>
+            <a href="{{ url_for('admin.subjects') }}" class="btn btn-glass btn-amber btn-magnetic py-2 px-3 fw-semibold small font-display d-flex align-items-center gap-2">
+                <i class="bi bi-book-half"></i> Manage Subjects
+            </a>
+            <a href="{{ url_for('hod.timetable') }}" class="btn btn-glass btn-green btn-magnetic py-2 px-3 fw-semibold small font-display d-flex align-items-center gap-2">
+                <i class="bi bi-calendar-range"></i> Manage Timetable
+            </a>
+        </div>
+    </div>
+
+    <!-- 2-Column Grid: Students Roster & Faculty Roster -->
+    <div class="row g-4 mb-4">
+        
+        <!-- Students Preview -->
+        <div class="col-12 col-lg-6">
+            <div class="glass-card tilt-card h-100 p-0 overflow-hidden">
+                <div class="tilt-shine"></div>
+                <div class="p-3 border-bottom border-white-10 d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold text-white mb-0 font-display">
+                        <i class="bi bi-people-fill text-cyan me-2"></i>Enrolled Students ({{ students|length }})
+                    </h6>
+                    <a href="{{ url_for('admin.students') }}" class="btn btn-glass btn-sm py-1 px-3 small font-mono">View All</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="glass-table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-4">Roll No</th>
+                                <th>Name</th>
+                                <th>Section</th>
+                                <th class="text-end pe-4">Biometrics</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for st in students[:6] %}
+                            <tr>
+                                <td class="ps-4"><span class="badge-glass badge-cyan font-mono">{{ st.student_id }}</span></td>
+                                <td class="fw-semibold text-white font-display">{{ st.user.name if st.user else 'N/A' }}</td>
+                                <td class="text-white-50 font-mono">{{ st.section }}</td>
+                                <td class="text-end pe-4">
+                                    {% if st.user and st.user.face_embeddings.filter_by(is_active=True).first() %}
+                                        <span class="badge-glass badge-green font-mono"><i class="bi bi-camera-video-fill me-1"></i>Enrolled</span>
+                                    {% else %}
+                                        <span class="badge-glass badge-red font-mono">Missing</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Faculty Preview -->
+        <div class="col-12 col-lg-6">
+            <div class="glass-card tilt-card h-100 p-0 overflow-hidden">
+                <div class="tilt-shine"></div>
+                <div class="p-3 border-bottom border-white-10 d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold text-white mb-0 font-display">
+                        <i class="bi bi-person-video3 text-purple me-2"></i>Faculty Members ({{ faculty_list|length }})
+                    </h6>
+                    <a href="{{ url_for('admin.faculty') }}" class="btn btn-glass btn-sm py-1 px-3 small font-mono">View All</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="glass-table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-4">Staff ID</th>
+                                <th>Name</th>
+                                <th>Designation</th>
+                                <th class="text-end pe-4">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for f in faculty_list[:6] %}
+                            <tr>
+                                <td class="ps-4"><span class="badge-glass badge-purple font-mono">{{ f.faculty_id }}</span></td>
+                                <td class="fw-semibold text-white font-display">{{ f.user.name if f.user else 'N/A' }}</td>
+                                <td class="text-white-50 small font-mono">{{ f.designation }}</td>
+                                <td class="text-end pe-4">
+                                    <span class="badge-glass badge-green font-mono">Active</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Recent Audit Logs -->
+    <div class="glass-card tilt-card p-0 overflow-hidden">
+        <div class="tilt-shine"></div>
+        <div class="p-3 border-bottom border-white-10 d-flex justify-content-between align-items-center">
+            <h6 class="fw-bold text-white mb-0 font-display">
+                <i class="bi bi-journal-text text-green me-2"></i>Security Audit Log Stream
+            </h6>
+            <span class="badge-glass badge-white font-mono">LAST 15 TRANSACTIONS</span>
+        </div>
+        <div class="table-responsive">
+            <table class="glass-table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Timestamp</th>
+                        <th>User</th>
+                        <th>Action</th>
+                        <th>Details</th>
+                        <th class="text-end pe-4">IP Address</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in recent_logs %}
+                    <tr>
+                        <td class="ps-4 text-white-50 font-mono small">{{ log.created_at.strftime('%d-%m %H:%M:%S') if log.created_at else '-' }}</td>
+                        <td class="text-white fw-semibold small font-display">{{ log.user.name if log.user else 'System' }}</td>
+                        <td><span class="badge-glass badge-amber font-mono" style="font-size: 0.72rem;">{{ log.action }}</span></td>
+                        <td class="text-white-50 small font-mono">{{ log.details or '-' }}</td>
+                        <td class="text-end pe-4 text-white-50 font-mono small">{{ log.ip_address or '-' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-white-50 font-mono">No security audit logs recorded yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

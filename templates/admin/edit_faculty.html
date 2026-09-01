@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}Edit Faculty Profile • Admin Console{% endblock %}
+
+{% block content %}
+<div class="glass-panel stagger" style="max-width: 680px;">
+
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <a href="{{ url_for('admin.faculty') }}" class="btn btn-glass rounded-circle p-2" title="Back to Faculty">
+      <i class="bi bi-arrow-left fs-5"></i>
+    </a>
+    <div>
+      <span class="badge-glass badge-purple mb-1">FACULTY PROFILE</span>
+      <h4 class="fw-bold font-display text-white mb-0">Modify Faculty Profile</h4>
+      <span class="text-white-50 small font-mono">Staff ID: {{ f.faculty_id }} • {{ f.user.name }}</span>
+    </div>
+  </div>
+
+  <div class="glass-card tilt-card p-4">
+    <div class="tilt-shine"></div>
+    <form method="POST" action="{{ url_for('admin.edit_faculty', faculty_id=f.id) }}" data-validate>
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-md-6 form-group-glass">
+          <label>Full Faculty Name</label>
+          <input type="text" name="name" class="glass-input" required value="{{ f.user.name if f.user else '' }}">
+        </div>
+        <div class="col-12 col-md-6 form-group-glass">
+          <label>Faculty Staff ID</label>
+          <input type="text" name="faculty_id" class="glass-input" required value="{{ f.faculty_id }}">
+        </div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-md-6 form-group-glass">
+          <label>Official Email</label>
+          <input type="email" name="email" class="glass-input" required value="{{ f.user.email if f.user else '' }}">
+        </div>
+        <div class="col-12 col-md-6 form-group-glass">
+          <label>Update Password (leave blank to keep current)</label>
+          <input type="password" name="password" class="glass-input" placeholder="New password...">
+        </div>
+      </div>
+
+      <div class="form-group-glass mb-4">
+        <label>Academic Designation</label>
+        <input type="text" name="designation" class="glass-input" required value="{{ f.designation }}">
+      </div>
+
+      <button type="submit" class="btn btn-glass btn-purple btn-magnetic w-100 py-3 font-display fs-6">
+        <i class="bi bi-check2-circle me-1"></i> Save Changes to Faculty Profile
+      </button>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

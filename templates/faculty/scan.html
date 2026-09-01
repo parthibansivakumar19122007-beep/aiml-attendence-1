@@ -1,0 +1,241 @@
+{% extends 'base.html' %}
+
+{% block title %}Faculty Biometric Check-in • Spatial AI Portal{% endblock %}
+
+{% block content %}
+<div class="glass-panel stagger">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-3">
+            <a href="{{ url_for('faculty.dashboard') }}" class="btn btn-glass rounded-circle p-2" title="Back to Dashboard">
+                <i class="bi bi-arrow-left fs-5"></i>
+            </a>
+            <div>
+                <span class="badge-glass badge-purple mb-1">FACULTY PORTAL</span>
+                <h4 class="fw-bold font-display text-white mb-0">Biometric Face Check-in</h4>
+                <span class="small text-white-50 font-mono">{{ faculty.user.name }} ({{ faculty.faculty_id }}) • {{ ist_now.strftime('%A, %d %b %Y %I:%M %p') }}</span>
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <span class="badge-glass badge-purple font-mono">
+                <i class="bi bi-cpu-fill me-1"></i>ENGINE: {{ face_status.backend|upper }}
+            </span>
+        </div>
+    </div>
+
+    {% if not has_face %}
+        <div class="glass-card p-4 text-center mb-4" style="border-color: rgba(248,113,113,0.4); background: rgba(248,113,113,0.06);">
+            <i class="bi bi-camera-video-off-fill text-red display-4 d-block mb-3"></i>
+            <h5 class="fw-bold text-white mb-2 font-display">Faculty Face Embedding Missing</h5>
+            <p class="text-white-50 small mb-3">
+                Your face embedding has not been registered in the master database yet.<br>
+                Please contact the Administrator to enroll your face photo from the Admin console.
+            </p>
+            <a href="{{ url_for('faculty.dashboard') }}" class="btn btn-glass btn-purple px-4 py-2">
+                <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+            </a>
+        </div>
+    {% else %}
+        <div class="row g-4">
+            <!-- Left: Webcam Live Capture Viewport -->
+            <div class="col-12 col-lg-7">
+                <div class="glass-card tilt-card p-4">
+                    <div class="tilt-shine"></div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold text-white mb-0 font-display">
+                            <i class="bi bi-camera-fill text-purple me-2"></i>Optical Stream Feed
+                        </h6>
+                        <span class="badge-glass badge-cyan font-mono" id="camStatusBadge">STANDBY</span>
+                    </div>
+
+                    <!-- Face HUD Container -->
+                    <div class="face-hud-wrap mb-3" id="facultyHudWrap">
+                        <video id="facultyVideo" class="face-hud-video" autoplay muted playsinline></video>
+                        <canvas id="facultyCanvas" class="face-hud-canvas"></canvas>
+
+                        <!-- Corner Target Brackets -->
+                        <div class="hud-corner hud-tl"></div>
+                        <div class="hud-corner hud-tr"></div>
+                        <div class="hud-corner hud-bl"></div>
+                        <div class="hud-corner hud-br"></div>
+
+                        <!-- Oval Guide -->
+                        <div class="hud-reticle" id="facultyFaceGuide"></div>
+
+                        <!-- Laser Scan Line -->
+                        <div class="hud-laser" id="facultyLaser" style="display: none;"></div>
+
+                        <!-- Placeholder -->
+                        <div id="facultyCamPlaceholder" class="hud-placeholder">
+                            <div class="p-3 rounded-circle" style="background: rgba(167,139,250,0.15); box-shadow: 0 0 35px var(--purple-glow);">
+                                <i class="bi bi-person-bounding-box display-4 text-purple"></i>
+                            </div>
+                            <div class="text-center">
+                                <h6 class="text-white fw-bold font-display mb-1">Optical Stream Idle</h6>
+                                <span class="small text-white-50 font-mono">Click [ ACTIVATE AI CAMERA ] to begin</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Check-in Type Selector -->
+                    <div class="form-group-glass mb-3">
+                        <label>Attendance Punch Designation</label>
+                        <select id="checkinTypeSelect" class="glass-input">
+                            <option value="AUTO" selected>Auto-Detect (Morning before 1 PM / Evening after 1 PM)</option>
+                            <option value="FACULTY_MORNING">Force Morning Arrival Check-in</option>
+                            <option value="FACULTY_EVENING">Force Evening Departure Check-out</option>
+                        </select>
+                    </div>
+
+                    <!-- Control Action Buttons -->
+                    <div class="d-flex gap-2">
+                        <button id="btnStartFacCam" class="btn btn-glass btn-purple btn-magnetic flex-fill py-3 font-display fs-6" onclick="startFacultyCamera()">
+                            <i class="bi bi-camera-video-fill me-1"></i> [ ACTIVATE AI CAMERA ]
+                        </button>
+                        <button id="btnVerifyFacFace" class="btn btn-glass btn-purple btn-magnetic flex-fill py-3 font-display fs-6 d-none" onclick="captureAndVerifyFacultyFace()">
+                            <i class="bi bi-person-check-fill me-1"></i> [ VERIFY &amp; RECORD PUNCH ]
+                        </button>
+                        <button id="btnStopFacCam" class="btn btn-glass btn-danger-glass py-3 px-3 d-none" onclick="stopFacultyCamera()">
+                            <i class="bi bi-stop-circle-fill fs-5"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Result & Instructions -->
+            <div class="col-12 col-lg-5">
+                <div id="facResultCard" class="glass-card tilt-card p-4 mb-4 d-none">
+                    <div class="tilt-shine"></div>
+                    <h6 class="fw-bold text-white mb-3 font-display">
+                        <i class="bi bi-patch-check-fill text-green me-2"></i>Verification Result
+                    </h6>
+                    <div id="facResultBody" class="text-center py-2"></div>
+                </div>
+
+                <div class="glass-card tilt-card p-4">
+                    <div class="tilt-shine"></div>
+                    <h6 class="fw-bold text-white mb-3 font-display">
+                        <i class="bi bi-info-circle-fill text-purple me-2"></i>Biometric Attendance Rules
+                    </h6>
+                    <ul class="small text-white-50 ps-3 mb-0 font-mono" style="font-size: 0.76rem; line-height: 1.6;">
+                        <li class="mb-2">Facial recognition replaces legacy card and barcode punches.</li>
+                        <li class="mb-2">Position face directly within the oval HUD reticle.</li>
+                        <li class="mb-2">Morning Arrival: Logged upon entry before 1:00 PM.</li>
+                        <li class="mb-2">Evening Departure: Logged upon exit after 1:00 PM.</li>
+                        <li>Server timestamps are recorded strictly in Asia/Kolkata (IST).</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let facultyStream = null;
+
+async function startFacultyCamera() {
+    try {
+        facultyStream = await navigator.mediaDevices.getUserMedia({
+            video: { width: 1280, height: 720, facingMode: 'user' },
+            audio: false
+        });
+        const video = document.getElementById('facultyVideo');
+        video.srcObject = facultyStream;
+        await video.play();
+        document.getElementById('facultyCamPlaceholder').style.display = 'none';
+        document.getElementById('btnStartFacCam').classList.add('d-none');
+        document.getElementById('btnVerifyFacFace').classList.remove('d-none');
+        document.getElementById('btnStopFacCam').classList.remove('d-none');
+        document.getElementById('facultyLaser').style.display = 'block';
+        document.getElementById('camStatusBadge').innerText = 'FEED ACTIVE';
+    } catch(err) {
+        window.Toast.error('Camera access error: ' + err.message);
+    }
+}
+
+function stopFacultyCamera() {
+    if (facultyStream) {
+        facultyStream.getTracks().forEach(t => t.stop());
+        facultyStream = null;
+    }
+    document.getElementById('facultyVideo').srcObject = null;
+    document.getElementById('facultyCamPlaceholder').style.display = 'flex';
+    document.getElementById('btnStartFacCam').classList.remove('d-none');
+    document.getElementById('btnVerifyFacFace').classList.add('d-none');
+    document.getElementById('btnStopFacCam').classList.add('d-none');
+    document.getElementById('facultyLaser').style.display = 'none';
+    document.getElementById('camStatusBadge').innerText = 'STANDBY';
+}
+
+async function captureAndVerifyFacultyFace() {
+    if (!facultyStream) {
+        window.Toast.warning('Please start the camera first.');
+        return;
+    }
+
+    const video = document.getElementById('facultyVideo');
+    const offscreen = document.createElement('canvas');
+    offscreen.width = video.videoWidth || 640;
+    offscreen.height = video.videoHeight || 480;
+    offscreen.getContext('2d').drawImage(video, 0, 0);
+    const frameB64 = offscreen.toDataURL('image/jpeg', 0.9);
+
+    const btn = document.getElementById('btnVerifyFacFace');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Matching Vector...';
+
+    let lat = null, lng = null;
+    try {
+        const pos = await new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, { timeout: 4000 }));
+        lat = pos.coords.latitude;
+        lng = pos.coords.longitude;
+    } catch(e) { }
+
+    const selectedType = document.getElementById('checkinTypeSelect').value;
+    const forceType = selectedType === 'AUTO' ? null : selectedType;
+
+    try {
+        const resp = await fetch('{{ url_for("faculty.api_faculty_checkin") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ frame_b64: frameB64, latitude: lat, longitude: lng, type: forceType })
+        });
+        const res = await resp.json();
+        showFacultyResult(res);
+    } catch(err) {
+        showFacultyResult({ success: false, message: 'Network error. Please try again.' });
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-person-check-fill me-1"></i> [ VERIFY &amp; RECORD PUNCH ]';
+    }
+}
+
+function showFacultyResult(res) {
+    const card = document.getElementById('facResultCard');
+    const body = document.getElementById('facResultBody');
+    card.classList.remove('d-none');
+
+    const isSuccess = res.success;
+    const iconClass = isSuccess ? 'bi-check-circle-fill text-green' : 'bi-x-circle-fill text-red';
+
+    body.innerHTML = `
+        <i class="bi ${iconClass} display-4 d-block mb-2"></i>
+        <h5 class="fw-bold text-white font-display mb-1">${isSuccess ? 'Verification Successful' : 'Verification Failed'}</h5>
+        <p class="text-white-50 small mb-2 font-mono">${res.message}</p>
+        ${res.confidence ? `<span class="badge-glass badge-cyan font-mono">Confidence: <strong>${(res.confidence * 100).toFixed(1)}%</strong></span>` : ''}
+    `;
+
+    document.getElementById('facultyFaceGuide').style.borderColor = isSuccess ? 'var(--green)' : 'var(--red)';
+    if (isSuccess) window.Toast.success(res.message || 'Check-in recorded.');
+    else window.Toast.error(res.message || 'Check-in failed.');
+
+    setTimeout(() => {
+        document.getElementById('facultyFaceGuide').style.borderColor = 'rgba(167, 139, 250, 0.55)';
+    }, 3500);
+}
+</script>
+{% endblock %}

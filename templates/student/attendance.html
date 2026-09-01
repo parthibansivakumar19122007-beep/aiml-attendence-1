@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+
+{% block title %}My Attendance Analytics • Student Portal{% endblock %}
+
+{% block content %}
+<div class="glass-panel stagger">
+
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-3">
+            <a href="{{ url_for('student.dashboard') }}" class="btn btn-glass rounded-circle p-2" title="Back to Dashboard">
+                <i class="bi bi-arrow-left fs-5"></i>
+            </a>
+            <div>
+                <span class="badge-glass badge-cyan mb-1">STUDENT ANALYTICS</span>
+                <h4 class="fw-bold font-display text-white mb-0">Comprehensive Attendance Matrix</h4>
+            </div>
+        </div>
+        <button class="btn btn-glass btn-magnetic px-4" onclick="window.print()">
+            <i class="bi bi-printer-fill me-1 text-cyan"></i> Export Document
+        </button>
+    </div>
+
+    <!-- Subject-Wise Percentage Grid -->
+    <div class="row g-3 mb-4">
+        {% for stat in subject_stats %}
+            <div class="col-12 col-sm-6 col-md-4">
+                <div class="glass-card tilt-card holo-card p-4 h-100 d-flex flex-column justify-content-between">
+                    <div class="tilt-shine"></div>
+                    <div>
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="badge-glass badge-cyan font-mono">{{ stat.code }}</span>
+                            <span class="fw-bold font-display fs-4 {% if stat.percentage >= 75 %}text-green{% else %}text-red{% endif %}" data-count="{{ stat.percentage }}">
+                                {{ stat.percentage }}%
+                            </span>
+                        </div>
+                        <h6 class="fw-bold text-white font-display mb-1">{{ stat.short_name }}</h6>
+                        <div class="small text-white-50 mb-3" style="font-size: 0.76rem;">{{ stat.name }}</div>
+
+                        <!-- Animated Subject Bar Track -->
+                        <div class="sub-bar-track mb-3" style="height: 8px; border-radius: 100px; background: rgba(255,255,255,0.08); overflow: hidden;">
+                            <div class="sub-bar-fill {% if stat.percentage >= 85 %}pct-high{% elif stat.percentage >= 75 %}pct-medium{% else %}pct-low{% endif %}" data-pct="{{ stat.percentage }}"></div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between small text-white-50 font-mono" style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 0.6rem;">
+                        <span>Present: <strong class="text-green">{{ stat.present }}</strong></span>
+                        <span>Total: <strong class="text-white">{{ stat.conducted }}</strong></span>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Attendance Log History Table -->
+    <div class="glass-card tilt-card p-0 overflow-hidden">
+        <div class="tilt-shine"></div>
+        <div class="p-3 border-bottom border-white-10 d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <h6 class="fw-bold text-white mb-0 font-display">
+                <i class="bi bi-clock-history text-cyan me-2"></i>Historical Biometric Attendance Logs
+            </h6>
+            <div class="table-search-wrap">
+                <i class="bi bi-search search-icon"></i>
+                <input type="text" class="glass-input table-search-input py-1" placeholder="Filter records..." data-table-search="studentAttHistoryTable">
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="glass-table align-middle mb-0" id="studentAttHistoryTable">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Timestamp</th>
+                        <th>Session Type</th>
+                        <th>Subject</th>
+                        <th>Proximity</th>
+                        <th class="text-end pe-4">Verification</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if records_history %}
+                        {% for rec, sess, slot, sub in records_history %}
+                            <tr>
+                                <td class="ps-4 font-mono small text-white-50">
+                                    {{ rec.scanned_at.strftime('%d-%m-%Y %I:%M:%S %p') }}
+                                </td>
+                                <td>
+                                    <span class="badge-glass badge-white font-mono">{{ rec.attendance_type }}</span>
+                                </td>
+                                <td>
+                                    {% if sub %}
+                                        <strong class="text-white font-display">{{ sub.short_name }}</strong>
+                                        <span class="small text-white-50 ms-1 font-mono">({{ sub.subject_code }})</span>
+                                    {% else %}
+                                        <span class="text-white-50">Faculty Session</span>
+                                    {% endif %}
+                                </td>
+                                <td class="small font-mono">
+                                    {% if rec.distance_m is not none %}
+                                        <span class="badge-glass {% if rec.distance_m <= 50 %}badge-green{% else %}badge-red{% endif %}">
+                                            <i class="bi bi-geo-alt-fill me-1"></i>{{ rec.distance_m }}m
+                                        </span>
+                                    {% else %}
+                                        <span class="text-white-50">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-4">
+                                    {% if rec.status == 'PRESENT' %}
+                                        <span class="badge-glass badge-green">
+                                            PRESENT &check;
+                                        </span>
+                                    {% else %}
+                                        <span class="badge-glass badge-red">
+                                            REJECTED
+                                        </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-white-50 font-mono">No historical attendance log records found.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

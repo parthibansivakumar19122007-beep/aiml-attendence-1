@@ -1,0 +1,457 @@
+/* ============================================================
+   SPATIAL AI GLASS - spatial.css
+   Supplementary spatial effects: holographic shimmer,
+   radar sweep, landmark grid, animated counters,
+   donut rings, drag-drop zone, timeline, audit log stream
+   ============================================================ */
+
+/* ============================================================
+   HOLOGRAPHIC SHIMMER CARD EFFECT
+   ============================================================ */
+.holo-card {
+  position: relative;
+  overflow: hidden;
+}
+.holo-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    transparent 30%,
+    rgba(255,255,255,0.03) 50%,
+    transparent 70%
+  );
+  background-size: 200% 200%;
+  animation: holoShimmer 4s ease-in-out infinite;
+  pointer-events: none;
+  border-radius: inherit;
+}
+@keyframes holoShimmer {
+  0%   { background-position: 200% 0%; }
+  100% { background-position: -200% 0%; }
+}
+
+/* Cyan accent edge glow (role-specific highlight on card edge) */
+.card-accent-cyan   { box-shadow: inset 3px 0 0 var(--cyan),   0 16px 48px rgba(0,0,0,0.4); }
+.card-accent-purple { box-shadow: inset 3px 0 0 var(--purple), 0 16px 48px rgba(0,0,0,0.4); }
+.card-accent-amber  { box-shadow: inset 3px 0 0 var(--amber),  0 16px 48px rgba(0,0,0,0.4); }
+.card-accent-green  { box-shadow: inset 3px 0 0 var(--green),  0 16px 48px rgba(0,0,0,0.4); }
+.card-accent-red    { box-shadow: inset 3px 0 0 var(--red),    0 16px 48px rgba(0,0,0,0.4); }
+
+/* ============================================================
+   STAT COUNTER WIDGET
+   ============================================================ */
+.stat-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1.5rem;
+  border-radius: var(--r-lg);
+  position: relative;
+  overflow: hidden;
+}
+.stat-block .stat-icon {
+  width: 48px; height: 48px;
+  border-radius: var(--r-md);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem;
+  margin-bottom: 0.5rem;
+  flex-shrink: 0;
+}
+.stat-block .stat-val {
+  font-family: var(--font-display);
+  font-size: 2.6rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.stat-block .stat-label {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: rgba(255,255,255,0.50);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.stat-block .stat-trend {
+  font-size: 0.72rem;
+  font-weight: 600;
+  margin-top: 0.4rem;
+  display: flex; align-items: center; gap: 4px;
+}
+.stat-block .stat-trend.up   { color: var(--green); }
+.stat-block .stat-trend.down { color: var(--red); }
+
+/* ============================================================
+   DONUT RING (SVG-based)
+   ============================================================ */
+.donut-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.donut-svg { transform: rotate(-90deg); }
+.donut-track { fill: none; stroke: rgba(255,255,255,0.07); }
+.donut-bar {
+  fill: none;
+  stroke-linecap: round;
+  stroke-dasharray: 251; /* 2π × 40 */
+  stroke-dashoffset: 251;
+  transition: stroke-dashoffset 1.2s var(--ease-out);
+}
+.donut-center {
+  position: absolute;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 1px;
+  font-family: var(--font-display);
+}
+
+/* ============================================================
+   DRAG & DROP UPLOAD ZONE
+   ============================================================ */
+.drop-zone {
+  border: 2px dashed rgba(34,211,238,0.30);
+  border-radius: var(--r-lg);
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--dur-normal) ease;
+  background: rgba(34,211,238,0.04);
+  position: relative;
+  overflow: hidden;
+}
+.drop-zone:hover,
+.drop-zone.drag-over {
+  border-color: rgba(34,211,238,0.65);
+  background: rgba(34,211,238,0.10);
+  box-shadow: 0 0 30px rgba(34,211,238,0.15);
+}
+.drop-zone .drop-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+  opacity: 0.65;
+}
+.drop-zone.drag-over .drop-icon {
+  animation: dropBounce 0.4s var(--ease-spring);
+}
+@keyframes dropBounce {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+/* Photo preview within drop zone */
+.drop-preview {
+  width: 120px; height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin: 0 auto 0.75rem;
+  border: 2.5px solid var(--cyan);
+  box-shadow: 0 0 20px var(--cyan-glow);
+  display: none;
+}
+.drop-preview.visible { display: block; animation: previewFadeIn 0.4s var(--ease-out); }
+@keyframes previewFadeIn { from{opacity:0; transform:scale(0.85);} to{opacity:1; transform:scale(1);} }
+
+/* ============================================================
+   AUDIT LOG TIMELINE STREAM
+   ============================================================ */
+.audit-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: relative;
+}
+.audit-timeline::before {
+  content: '';
+  position: absolute;
+  left: 20px; top: 0; bottom: 0;
+  width: 1.5px;
+  background: linear-gradient(180deg,
+    rgba(34,211,238,0.4),
+    rgba(34,211,238,0.05) 80%,
+    transparent);
+}
+.audit-entry {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 0.75rem 0.75rem 0.75rem 0;
+  position: relative;
+  animation: auditEntryIn 0.3s var(--ease-out) both;
+}
+.audit-entry .audit-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--cyan);
+  border: 2px solid rgba(34,211,238,0.5);
+  flex-shrink: 0;
+  margin-top: 4px;
+  margin-left: 14px;
+  box-shadow: 0 0 8px rgba(34,211,238,0.4);
+  position: relative;
+  z-index: 1;
+}
+.audit-entry .audit-meta { flex: 1; }
+.audit-entry .audit-action {
+  font-size: 0.82rem; font-weight: 600; color: rgba(255,255,255,0.85);
+}
+.audit-entry .audit-details {
+  font-size: 0.74rem; color: rgba(255,255,255,0.45); margin-top: 2px;
+  font-family: var(--font-mono);
+}
+.audit-entry .audit-time {
+  font-size: 0.7rem; color: rgba(255,255,255,0.3);
+  font-family: var(--font-mono); white-space: nowrap;
+}
+@keyframes auditEntryIn {
+  from { opacity:0; transform:translateX(-8px); }
+  to   { opacity:1; transform:translateX(0); }
+}
+
+/* ============================================================
+   SYSTEM NETWORK VISUALIZATION (SVG overlay)
+   ============================================================ */
+.network-svg-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/7;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background: rgba(6,12,24,0.6);
+  border: 1px solid rgba(34,211,238,0.12);
+}
+#networkSvg {
+  width: 100%; height: 100%;
+}
+.net-node {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+.net-node:hover { transform: scale(1.1); }
+.net-edge {
+  stroke: rgba(34,211,238,0.18);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+  animation: edgeDash 3s linear infinite;
+}
+@keyframes edgeDash { to { stroke-dashoffset: -16; } }
+
+/* ============================================================
+   ATTENDANCE SUBJECT BARS
+   ============================================================ */
+.subject-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.055);
+}
+.subject-bar-row:last-child { border-bottom: none; }
+.subject-bar-row .sub-name {
+  width: 120px; flex-shrink: 0;
+  font-size: 0.8rem; font-weight: 600; color: rgba(255,255,255,0.8);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.subject-bar-row .sub-bar-track {
+  flex: 1; height: 8px; border-radius: 100px;
+  background: rgba(255,255,255,0.06); overflow: hidden;
+}
+.subject-bar-row .sub-bar-fill {
+  height: 100%; border-radius: 100px;
+  transform-origin: left; transform: scaleX(0);
+  transition: transform 1s var(--ease-out);
+}
+.sub-bar-fill.pct-high   { background: linear-gradient(90deg, var(--green-dim), var(--green)); }
+.sub-bar-fill.pct-medium { background: linear-gradient(90deg, #d97706, var(--amber)); }
+.sub-bar-fill.pct-low    { background: linear-gradient(90deg, var(--red-dim), var(--red)); }
+.subject-bar-row .sub-pct {
+  width: 50px; text-align: right;
+  font-size: 0.82rem; font-weight: 700; font-family: var(--font-mono);
+}
+
+/* ============================================================
+   HOUR MATRIX (HOD) - ENHANCED
+   ============================================================ */
+.hour-matrix-row {
+  display: grid;
+  grid-template-columns: 60px repeat(7, 1fr);
+  gap: 0.4rem;
+  margin-bottom: 0.4rem;
+  align-items: center;
+}
+.hour-matrix-cell {
+  padding: 0.65rem 0.4rem;
+  border-radius: var(--r-sm);
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: default;
+  transition: transform var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
+  position: relative;
+  overflow: hidden;
+}
+.hour-matrix-cell:hover { transform: scale(1.04); }
+.hour-matrix-cell.cell-pending   { background: rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); color:rgba(255,255,255,0.35); }
+.hour-matrix-cell.cell-progress  { background: rgba(34,211,238,0.12); border:1px solid rgba(34,211,238,0.3); color:var(--cyan); }
+.hour-matrix-cell.cell-complete  { background: rgba(52,211,153,0.12); border:1px solid rgba(52,211,153,0.3); color:var(--green); }
+.hour-matrix-cell.cell-expired   { background: rgba(251,191,36,0.10); border:1px solid rgba(251,191,36,0.25); color:var(--amber); }
+.hour-matrix-cell .cell-progress-bar {
+  position: absolute; bottom:0; left:0;
+  height: 2.5px;
+  background: var(--cyan);
+  border-radius: 0 0 var(--r-sm) var(--r-sm);
+  transition: width 0.6s var(--ease-out);
+}
+
+/* ============================================================
+   ROSTER PILL STATES (Faculty session live feed)
+   ============================================================ */
+.roster-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 100px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  transition: all var(--dur-normal) var(--ease-out);
+}
+.pill-pending   { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.5); border:1px solid rgba(255,255,255,0.12); }
+.pill-scanning  { background: rgba(34,211,238,0.15); color: var(--cyan); border:1px solid rgba(34,211,238,0.4); animation:pillScan 1s ease infinite; }
+.pill-present   { background: rgba(52,211,153,0.15); color: var(--green); border:1px solid rgba(52,211,153,0.4); }
+.pill-rejected  { background: rgba(248,113,113,0.15); color: var(--red); border:1px solid rgba(248,113,113,0.4); }
+@keyframes pillScan { 0%,100%{opacity:1;} 50%{opacity:0.55;} }
+
+/* ============================================================
+   SESSION HEADER (Faculty active session banner)
+   ============================================================ */
+.session-banner {
+  border-radius: var(--r-lg);
+  padding: 1.25rem 1.5rem;
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  background: linear-gradient(135deg, rgba(139,92,246,0.18), rgba(6,182,212,0.12));
+  border: 1px solid rgba(139,92,246,0.35);
+  box-shadow: 0 0 30px rgba(139,92,246,0.12);
+  flex-wrap: wrap;
+}
+.session-timer {
+  font-family: var(--font-mono);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--purple);
+  text-shadow: 0 0 16px rgba(139,92,246,0.5);
+  letter-spacing: 0.04em;
+}
+
+/* ============================================================
+   TABLE SEARCH FILTER
+   ============================================================ */
+.table-search-wrap {
+  position: relative;
+  flex: 1;
+  max-width: 360px;
+}
+.table-search-wrap .search-icon {
+  position: absolute; left: 0.9rem; top: 50%; transform: translateY(-50%);
+  color: rgba(255,255,255,0.35); font-size: 0.9rem; pointer-events: none;
+}
+.table-search-input {
+  padding-left: 2.4rem !important;
+}
+.table-row-hidden { display: none !important; }
+
+/* ============================================================
+   FORM VALIDATION MICRO-INTERACTIONS
+   ============================================================ */
+.form-group-glass {
+  position: relative;
+  margin-bottom: 1.25rem;
+}
+.form-group-glass label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.55);
+  margin-bottom: 0.4rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.glass-input.is-valid   { border-color: var(--green) !important; box-shadow: 0 0 0 3px rgba(52,211,153,0.2) !important; }
+.glass-input.is-invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(248,113,113,0.2) !important; }
+.validation-msg {
+  font-size: 0.73rem; margin-top: 0.3rem; display: flex; align-items: center; gap: 4px;
+}
+.validation-msg.valid   { color: var(--green); }
+.validation-msg.invalid { color: var(--red); }
+
+/* Input shake on validation fail */
+@keyframes inputShake {
+  0%,100%{transform:translateX(0);}
+  25%{transform:translateX(-5px);}
+  75%{transform:translateX(5px);}
+}
+.glass-input.shake { animation: inputShake 0.35s ease; }
+
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+.empty-state .empty-icon {
+  font-size: 3rem;
+  opacity: 0.35;
+  animation: emptyFloat 4s ease-in-out infinite;
+}
+.empty-state .empty-title { font-size: 1.05rem; font-weight: 600; color: rgba(255,255,255,0.65); }
+.empty-state .empty-sub   { font-size: 0.82rem; color: rgba(255,255,255,0.35); max-width: 280px; }
+@keyframes emptyFloat { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-8px);} }
+
+/* ============================================================
+   SCROLLBAR POLISH
+   ============================================================ */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.28); }
+* { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.15) transparent; }
+
+/* ============================================================
+   QUICK MISC UTILITIES
+   ============================================================ */
+.divider-glass {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+  margin: 1.25rem 0;
+}
+.shimmer-text {
+  background: linear-gradient(90deg, var(--cyan), var(--purple), var(--cyan));
+  background-size: 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: textShimmer 3s linear infinite;
+}
+@keyframes textShimmer { to { background-position: -200%; } }
+
+.pulse-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--green);
+  animation: dotPulse 2s ease-in-out infinite;
+  display: inline-block;
+}
+@keyframes dotPulse { 0%,100%{transform:scale(1); opacity:1;} 50%{transform:scale(1.35); opacity:0.7;} }
+
+/* Hover lift - general purpose */
+.hover-lift { transition: transform var(--dur-normal) var(--ease-out), box-shadow var(--dur-normal) ease; }
+.hover-lift:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,0.4); }

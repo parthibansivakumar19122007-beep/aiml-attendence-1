@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}Add Faculty Member • Admin Console{% endblock %}
+
+{% block content %}
+<div class="glass-panel stagger" style="max-width: 680px;">
+
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <a href="{{ url_for('admin.faculty') }}" class="btn btn-glass rounded-circle p-2" title="Back to Faculty">
+      <i class="bi bi-arrow-left fs-5"></i>
+    </a>
+    <div>
+      <span class="badge-glass badge-purple mb-1">FACULTY ENROLLMENT</span>
+      <h4 class="fw-bold font-display text-white mb-0">Register New Faculty Member</h4>
+      <span class="text-white-50 small font-mono">Department of CSE – Artificial Intelligence and Machine Learning</span>
+    </div>
+  </div>
+
+  <div class="glass-card tilt-card p-4">
+    <div class="tilt-shine"></div>
+    <form method="POST" action="{{ url_for('admin.add_faculty') }}" data-validate>
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-md-6 form-group-glass">
+          <label>Full Faculty Name</label>
+          <input type="text" name="name" class="glass-input" required placeholder="e.g. Dr. Rajesh Kumar">
+        </div>
+        <div class="col-12 col-md-6 form-group-glass">
+          <label>Faculty Staff ID</label>
+          <input type="text" name="faculty_id" class="glass-input" required placeholder="e.g. FAC004">
+        </div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-md-6 form-group-glass">
+          <label>Official Email</label>
+          <input type="email" name="email" class="glass-input" required placeholder="faculty@example.com">
+        </div>
+        <div class="col-12 col-md-6 form-group-glass">
+          <label>Account Password</label>
+          <input type="password" name="password" class="glass-input" required placeholder="••••••••" value="Password123!">
+        </div>
+      </div>
+
+      <div class="form-group-glass mb-4">
+        <label>Academic Designation</label>
+        <input type="text" name="designation" class="glass-input" required placeholder="e.g. Assistant Professor / Associate Professor">
+      </div>
+
+      <button type="submit" class="btn btn-glass btn-purple btn-magnetic w-100 py-3 font-display fs-6">
+        <i class="bi bi-person-check-fill me-1"></i> Register Faculty Member
+      </button>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

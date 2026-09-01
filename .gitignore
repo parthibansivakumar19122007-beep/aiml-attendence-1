@@ -1,0 +1,35 @@
+# Python virtual environment
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Local SQLite databases & instance folder
+instance/
+*.db
+*.sqlite3
+
+# Logs & temp files
+*.log
+scratch/
+.system_generated/
+
+# Environment files (keep template in .env.example)
+.env
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# IDE configuration
+.vscode/
+.idea/

@@ -1,0 +1,336 @@
+{% extends 'base.html' %}
+
+{% block title %}Spatial AI Biometric Verification • Student Portal{% endblock %}
+
+{% block content %}
+<div class="glass-panel stagger">
+
+    <!-- Top Navigation Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-3">
+            <a href="{{ url_for('student.dashboard') }}" class="btn btn-glass rounded-circle p-2" title="Back to Dashboard">
+                <i class="bi bi-arrow-left fs-5"></i>
+            </a>
+            <div>
+                <span class="badge-glass badge-cyan mb-1">SPATIAL BIOMETRIC AI</span>
+                <h4 class="fw-bold font-display text-white mb-0">High-Precision Face Recognition HUD</h4>
+                <span class="small text-white-50 font-mono">
+                    {{ student.student_id }} • {{ student.user.name }} • {{ ist_now.strftime('%A, %d %b %Y %I:%M %p') }}
+                </span>
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <span class="badge-glass badge-cyan font-mono">
+                <i class="bi bi-cpu-fill me-1"></i>ENGINE: {{ face_status.backend|upper }}
+            </span>
+        </div>
+    </div>
+
+    {% if not has_face %}
+        <!-- Face Not Enrolled Warning Panel -->
+        <div class="glass-card p-5 text-center mb-4" style="border-color: rgba(248,113,113,0.4); background: rgba(248,113,113,0.06);">
+            <i class="bi bi-camera-video-off-fill text-red display-3 d-block mb-3"></i>
+            <h4 class="fw-bold font-display text-white mb-2">Student Face Embedding Missing</h4>
+            <p class="text-white-50 small mb-4">
+                Your 128-dimensional facial embedding vector is not enrolled in the database yet.<br>
+                Please contact the Administrator to enroll your face photo in the Admin Management Console.
+            </p>
+            <a href="{{ url_for('student.dashboard') }}" class="btn btn-glass px-4 py-2">
+                <i class="bi bi-arrow-left me-1"></i> Return to Dashboard
+            </a>
+        </div>
+    {% elif open_sessions|length == 0 %}
+        <!-- No Active Open Class Sessions -->
+        <div class="glass-card p-5 text-center mb-4" style="border-color: rgba(251,191,36,0.4); background: rgba(251,191,36,0.06);">
+            <i class="bi bi-clock-history text-amber display-3 d-block mb-3"></i>
+            <h4 class="fw-bold font-display text-white mb-2">No Active Class Attendance Session</h4>
+            <p class="text-white-50 small mb-4">
+                There are currently no open attendance sessions for class section (<strong>{{ student.classroom.class_name if student.classroom else 'I B.E II AIML' }}</strong>).<br>
+                Please wait for the instructor to launch the session from their portal.
+            </p>
+            <div class="d-flex justify-content-center gap-2">
+                <button type="button" class="btn btn-glass btn-cyan px-4 py-2" onclick="location.reload()">
+                    <i class="bi bi-arrow-clockwise me-1"></i> Refresh Status
+                </button>
+                <a href="{{ url_for('student.dashboard') }}" class="btn btn-glass px-4 py-2">
+                    Back to Dashboard
+                </a>
+            </div>
+        </div>
+    {% else %}
+
+        <!-- Active 3D Biometric Face Scanning Interface -->
+        <div class="row g-4">
+
+            <!-- Left: Spatial AI HUD Camera Viewport -->
+            <div class="col-12 col-lg-7">
+                <div class="glass-card tilt-card p-4">
+                    <div class="tilt-shine"></div>
+                    
+                    <!-- Session Selector Dropdown -->
+                    <div class="form-group-glass mb-3">
+                        <label class="d-flex justify-content-between">
+                            <span>Select Target Attendance Session</span>
+                            <span class="text-cyan font-mono">{{ open_sessions|length }} SESSION(S) OPEN</span>
+                        </label>
+                        <select id="sessionSelect" class="glass-input">
+                            {% for sess, tt, sub in open_sessions %}
+                            <option value="{{ sess.id }}" {% if loop.first %}selected{% endif %}>
+                                Hour {{ tt.hour_number }} – {{ sub.short_name }} ({{ sub.subject_name }}) • Faculty: {{ tt.faculty.user.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Face HUD Viewport Container -->
+                    <div class="face-hud-wrap mb-3" id="faceHudWrap">
+                        <video id="webcamVideo" class="face-hud-video" autoplay muted playsinline></video>
+                        <canvas id="hudCanvas" class="face-hud-canvas"></canvas>
+
+                        <!-- Corner Target Brackets -->
+                        <div class="hud-corner hud-tl"></div>
+                        <div class="hud-corner hud-tr"></div>
+                        <div class="hud-corner hud-bl"></div>
+                        <div class="hud-corner hud-br"></div>
+
+                        <!-- Oval Reticle Guide -->
+                        <div class="hud-reticle" id="hudReticle"></div>
+
+                        <!-- Laser Scan Beam -->
+                        <div class="hud-laser" id="hudLaser" style="display: none;"></div>
+
+                        <!-- Status Overlay Badge -->
+                        <div class="hud-status-pill" id="hudStatusPill">
+                            ● CAMERA STANDBY
+                        </div>
+
+                        <!-- Camera Not Started Placeholder -->
+                        <div id="hudPlaceholder" class="hud-placeholder">
+                            <div class="p-3 rounded-circle" style="background: rgba(34,211,238,0.15); box-shadow: 0 0 35px var(--cyan-glow);">
+                                <i class="bi bi-camera-video display-4 text-cyan"></i>
+                            </div>
+                            <div class="text-center">
+                                <h6 class="text-white fw-bold font-display mb-1">Optical Biometric Stream Idle</h6>
+                                <span class="small text-white-50 font-mono">Click [ ACTIVATE AI CAMERA ] to initialize</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Controls -->
+                    <div class="d-flex gap-2">
+                        <button id="btnStartCam" class="btn btn-glass btn-cyan btn-magnetic flex-fill py-3 font-display fs-6" onclick="startCameraSession()">
+                            <i class="bi bi-camera-video-fill fs-5"></i> [ ACTIVATE AI CAMERA ]
+                        </button>
+                        <button id="btnCaptureVerify" class="btn btn-glass btn-cyan btn-magnetic flex-fill py-3 font-display fs-6 d-none" onclick="triggerFaceVerification()">
+                            <i class="bi bi-person-check-fill fs-5"></i> [ VERIFY &amp; MARK PRESENT ]
+                        </button>
+                        <button id="btnStopCam" class="btn btn-glass btn-danger-glass py-3 px-3 d-none" onclick="stopCameraSession()" title="Stop Stream">
+                            <i class="bi bi-stop-circle-fill fs-5"></i>
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Right: Radar & 6-Step Verification Pipeline -->
+            <div class="col-12 col-lg-5">
+                
+                <!-- 50m Geofence Radar Widget -->
+                <div class="glass-card tilt-card p-3 mb-4">
+                    <div class="tilt-shine"></div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="small fw-bold text-white font-display">
+                            <i class="bi bi-broadcast text-cyan me-1"></i>50M GEOFENCE RADAR
+                        </span>
+                        <span class="badge-glass badge-cyan font-mono">GPS ACTIVE</span>
+                    </div>
+
+                    <div class="radar-wrap" style="height: 180px;">
+                        <canvas id="radarCanvas"></canvas>
+                        <div class="radar-distance-badge" id="radarDistanceBadge">
+                            🛰️ SCANNING GPS TELEMETRY...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 6-Step Verification Pipeline Tracker -->
+                <div class="glass-card tilt-card p-4">
+                    <div class="tilt-shine"></div>
+                    <h6 class="fw-bold text-white mb-3 font-display">
+                        <i class="bi bi-shield-check text-cyan me-2"></i>Verification Pipeline
+                    </h6>
+                    <div class="pipeline-track" id="pipelineTrack">
+                        <!-- Populated by FaceVisionHUD -->
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+<!-- ─────────────────────────────────────────────────────────────────────────────
+     ATTENDANCE SUCCESS CELEBRATION GLASS MODAL
+     ───────────────────────────────────────────────────────────────────────────── -->
+<div class="modal fade glass-modal" id="successModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-center p-4">
+            <div class="modal-body p-3">
+                <div class="my-3">
+                    <div class="success-ring">
+                        ✓
+                    </div>
+                    <h3 class="fw-bold font-display text-white mb-1">Attendance Verified!</h3>
+                    <span class="badge-glass badge-green fs-6 py-2 px-3 mb-3">
+                        STATUS: PRESENT ✓
+                    </span>
+                </div>
+
+                <div class="p-3 rounded-4 mb-4 text-start small font-mono" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255,255,255,0.12);">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-white-50">Student:</span>
+                        <strong class="text-white">{{ student.user.name }} ({{ student.student_id }})</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-white-50">Face Match Confidence:</span>
+                        <strong class="text-cyan" id="modalConfidenceVal">96.4%</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-white-50">Geofence Distance:</span>
+                        <strong class="text-green" id="modalDistanceVal">Verified (&lt;50m)</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-white-50">Recorded Timestamp:</span>
+                        <strong class="text-white" id="modalTimestampVal">{{ ist_now.strftime('%I:%M:%S %p') }}</strong>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('student.dashboard') }}" class="btn btn-glass btn-cyan py-3 font-display fs-6">
+                        <i class="bi bi-grid-1x2-fill me-1"></i> Continue to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let hudInstance = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+    hudInstance = new FaceVisionHUD({
+        videoEl: document.getElementById('webcamVideo'),
+        canvasEl: document.getElementById('hudCanvas'),
+        radarCanvasEl: document.getElementById('radarCanvas'),
+        pipelineEl: document.getElementById('pipelineTrack'),
+        statusPillEl: document.getElementById('hudStatusPill'),
+        hudWrapEl: document.getElementById('faceHudWrap')
+    });
+});
+
+async function startCameraSession() {
+    if (!hudInstance) return;
+    const ok = await hudInstance.startCamera();
+    if (ok) {
+        document.getElementById('btnStartCam').classList.add('d-none');
+        document.getElementById('btnCaptureVerify').classList.remove('d-none');
+        document.getElementById('btnStopCam').classList.remove('d-none');
+        document.getElementById('hudLaser').style.display = 'block';
+    }
+}
+
+function stopCameraSession() {
+    if (!hudInstance) return;
+    hudInstance.stopCamera();
+    document.getElementById('btnStartCam').classList.remove('d-none');
+    document.getElementById('btnCaptureVerify').classList.add('d-none');
+    document.getElementById('btnStopCam').classList.add('d-none');
+    document.getElementById('hudLaser').style.display = 'none';
+    document.getElementById('hudPlaceholder').style.display = 'flex';
+}
+
+async function triggerFaceVerification() {
+    const sessionSelect = document.getElementById('sessionSelect');
+    const sessionId = sessionSelect ? sessionSelect.value : null;
+
+    if (!sessionId) {
+        window.Toast.warning('Please select an active session first.');
+        return;
+    }
+
+    const frameB64 = hudInstance.captureFrameB64();
+    if (!frameB64) {
+        window.Toast.error('No camera feed available. Please allow camera access.');
+        return;
+    }
+
+    const btn = document.getElementById('btnCaptureVerify');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Analyzing 128-Dim Vector...';
+
+    hudInstance.setStepState(1, 'done');
+    hudInstance.setStepState(2, 'active');
+    hudInstance.setStatus('EXTRACTING NEURAL EMBEDDING...', 'amber');
+
+    // Acquire GPS Coordinates
+    let lat = null, lng = null;
+    try {
+        const pos = await new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, { timeout: 4500, enableHighAccuracy: true }));
+        lat = pos.coords.latitude;
+        lng = pos.coords.longitude;
+    } catch(e) {
+        console.warn('GPS prompt dismissed or unavailable:', e);
+    }
+
+    try {
+        hudInstance.setStepState(2, 'done');
+        hudInstance.setStepState(3, 'active');
+
+        const resp = await fetch('{{ url_for("student.api_verify_face") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                frame_b64: frameB64,
+                session_id: parseInt(sessionId),
+                latitude: lat,
+                longitude: lng
+            })
+        });
+
+        const data = await resp.json();
+
+        if (data.success) {
+            hudInstance.setSuccess(data.face_confidence || 0.95, data.message);
+            if (data.distance_m !== undefined && data.distance_m !== null) {
+                hudInstance.updateDistance(data.distance_m);
+                document.getElementById('modalDistanceVal').innerText = `${data.distance_m.toFixed(1)}m (Within 50m)`;
+            } else {
+                hudInstance.updateDistance(12.0); // simulated in-range
+            }
+
+            if (data.face_confidence) {
+                document.getElementById('modalConfidenceVal').innerText = (data.face_confidence * 100).toFixed(1) + '%';
+            }
+
+            const modal = new bootstrap.Modal(document.getElementById('successModal'));
+            modal.show();
+        } else {
+            hudInstance.setFailure(data.message || 'Face verification failed');
+            window.Toast.error(data.message || 'Face verification failed.');
+        }
+    } catch(err) {
+        hudInstance.setFailure('Network communication error');
+        window.Toast.error('Network error: ' + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-person-check-fill fs-5"></i> [ VERIFY &amp; MARK PRESENT ]';
+    }
+}
+</script>
+{% endblock %}

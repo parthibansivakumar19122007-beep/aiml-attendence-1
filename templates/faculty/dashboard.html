@@ -1,0 +1,256 @@
+{% extends 'base.html' %}
+
+{% block title %}Faculty Command Center • Spatial AI Attendance{% endblock %}
+
+{% block content %}
+<div class="glass-panel stagger">
+
+    <!-- Top Bar: Greeting + Current Time -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div class="d-flex align-items-center gap-3">
+            <div class="avatar-circle fs-3 fw-bold text-purple" style="width: 58px; height: 58px; background: rgba(167, 139, 250, 0.2); border: 2px solid var(--purple); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 25px var(--purple-glow);">
+                {{ faculty.user.name[0] }}
+            </div>
+            <div>
+                <span class="badge-glass badge-purple mb-1">FACULTY PORTAL &amp; COMMAND CENTER</span>
+                <h3 class="fw-bold font-display text-white mb-0">Welcome, {{ faculty.user.name }}!</h3>
+                <span class="small text-white-50 font-mono">Staff ID: <strong class="text-white">{{ faculty.faculty_id }}</strong> • {{ faculty.designation }}</span>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <div class="glass-card py-2 px-3 d-flex align-items-center gap-2">
+                <i class="bi bi-clock-fill text-purple"></i>
+                <span class="small text-white font-mono">{{ today_day }}, {{ current_time }} IST</span>
+            </div>
+            <a href="{{ url_for('faculty.scan') }}" class="btn btn-glass btn-magnetic py-2 px-3 small d-flex align-items-center gap-2">
+                <i class="bi bi-person-badge text-purple"></i> Biometric Check-in
+            </a>
+        </div>
+    </div>
+
+    <!-- 2-Column Grid: Left Auto-Detected Session Card & Right Roster Preview -->
+    <div class="row g-4 mb-4">
+
+        <!-- Left Card: Auto-Detected Academic Session -->
+        <div class="col-12 col-lg-7">
+            <div class="glass-card tilt-card holo-card card-accent-purple h-100 d-flex flex-column justify-content-between p-4">
+                <div class="tilt-shine"></div>
+                <div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold text-white mb-0 font-display">
+                            <i class="bi bi-broadcast text-purple me-2"></i>Auto-Detected Academic Session
+                        </h6>
+                        {% if active_session and active_session.status == 'OPEN' %}
+                            <span class="badge-glass badge-live">
+                                <span class="pulse-dot me-1"></span> LIVE SESSION OPEN
+                            </span>
+                        {% elif current_slot %}
+                            <span class="badge-glass badge-amber">
+                                SCHEDULED CURRENT HOUR
+                            </span>
+                        {% else %}
+                            <span class="badge-glass badge-white">NO CLASS SCHEDULED</span>
+                        {% endif %}
+                    </div>
+
+                    {% if current_slot %}
+                        <div class="p-4 rounded-4 mb-3" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255,255,255,0.12);">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <span class="badge-glass badge-amber font-mono">Hour {{ current_slot.hour_number }}</span>
+                                <span class="badge-glass badge-white">{{ current_slot.classroom.class_name if current_slot.classroom else 'I B.E II AIML' }}</span>
+                            </div>
+                            <h3 class="fw-bold font-display text-white mb-1">{{ current_slot.subject.subject_name }}</h3>
+                            <div class="text-white-50 small mb-3 font-mono">
+                                Subject Code: <strong class="text-purple">{{ current_slot.subject.subject_code }}</strong> • Short: <strong>{{ current_slot.subject.short_name }}</strong>
+                            </div>
+                            <div class="d-flex gap-4 text-white-50 small font-mono">
+                                <span><i class="bi bi-clock me-1 text-purple"></i> {{ current_slot.start_time.strftime('%I:%M %p') }} – {{ current_slot.end_time.strftime('%I:%M %p') }}</span>
+                                <span><i class="bi bi-geo-alt me-1 text-cyan"></i> {{ current_slot.classroom.room_number if current_slot.classroom else 'Room 204' }}</span>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="p-4 text-center text-white-50 rounded-4 mb-3" style="background: rgba(255, 255, 255, 0.03);">
+                            <i class="bi bi-calendar-x display-4 d-block mb-2 text-white-50 opacity-50"></i>
+                            <h6 class="fw-bold text-white mb-1 font-display">No Attendance Session Scheduled</h6>
+                            <p class="small mb-0">{{ session_info.message }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div>
+                    {% if active_session and active_session.status == 'OPEN' %}
+                        <a href="{{ url_for('faculty.session_view', session_id=active_session.id) }}" class="btn btn-glass btn-purple btn-magnetic w-100 py-3 font-display fs-6 d-flex align-items-center justify-content-center gap-2">
+                            <i class="bi bi-broadcast fs-5"></i> Return to Live Session Controller
+                        </a>
+                    {% elif current_slot %}
+                        <button type="button" class="btn btn-glass btn-purple btn-magnetic w-100 py-3 font-display fs-6 d-flex align-items-center justify-content-center gap-2" data-bs-toggle="modal" data-bs-target="#startSessionModal">
+                            <i class="bi bi-play-circle-fill fs-5"></i> [ START ATTENDANCE (50m GEOFENCE LOCK) ]
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Card: Mini Roster & Faculty Check-in Status -->
+        <div class="col-12 col-lg-5">
+            <div class="glass-card tilt-card holo-card h-100 p-4 d-flex flex-column justify-content-between">
+                <div class="tilt-shine"></div>
+                <div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold text-white mb-0 font-display">
+                            <i class="bi bi-people-fill text-purple me-2"></i>Class Roster Status
+                        </h6>
+                        <span class="badge-glass badge-white">I B.E II AIML</span>
+                    </div>
+
+                    <div class="p-3 rounded-3 mb-3" style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255,255,255,0.08);">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-white-50 small font-mono">Morning Arrival Check-in:</span>
+                            <strong class="{% if morning_checkin %}text-green{% else %}text-amber{% endif %} small font-mono">
+                                {% if morning_checkin %}RECORDED &check; ({{ morning_checkin.scanned_at.strftime('%I:%M %p') }}){% else %}PENDING{% endif %}
+                            </strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-white-50 small font-mono">Evening Departure Check-out:</span>
+                            <strong class="{% if evening_checkin %}text-green{% else %}text-white-50{% endif %} small font-mono">
+                                {% if evening_checkin %}RECORDED &check; ({{ evening_checkin.scanned_at.strftime('%I:%M %p') }}){% else %}PENDING{% endif %}
+                            </strong>
+                        </div>
+                    </div>
+
+                    <div class="small text-white-50 mb-2 font-mono" style="font-size: 0.72rem;">QUICK MANAGEMENT:</div>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('faculty.session_view') }}" class="btn btn-glass py-2 text-start small d-flex align-items-center justify-content-between">
+                            <span><i class="bi bi-broadcast me-2 text-purple"></i>Live Classroom Controller</span>
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                        <a href="{{ url_for('faculty.attendance') }}" class="btn btn-glass py-2 text-start small d-flex align-items-center justify-content-between">
+                            <span><i class="bi bi-clock-history me-2 text-cyan"></i>History Logs &amp; Export CSV</span>
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="mt-3 p-3 rounded-3 text-center small text-white-50 font-mono" style="background: rgba(167, 139, 250, 0.08);">
+                    <i class="bi bi-shield-check text-purple me-1"></i> 50m Geofence and Facial AI Active
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Bottom Full-Width 7-Hour Today Schedule Timeline Strip -->
+    <div class="glass-card tilt-card p-4">
+        <div class="tilt-shine"></div>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="fw-bold text-white mb-0 font-display">
+                <i class="bi bi-calendar-week-fill text-purple me-2"></i>Today's Faculty Schedule Strip
+            </h6>
+            <span class="small text-white-50 font-mono">{{ today_day }} Master Timetable</span>
+        </div>
+
+        <div class="session-strip">
+            {% if today_schedule %}
+                {% for slot in today_schedule %}
+                    <div class="hour-tile {% if current_slot and current_slot.id == slot.id %}current{% endif %}">
+                        <span class="badge-glass badge-amber font-mono mb-1">Hour {{ slot.hour_number }}</span>
+                        <strong class="text-white d-block small font-display">{{ slot.subject.short_name }}</strong>
+                        <span class="text-white-50 d-block mt-1 font-mono" style="font-size: 0.72rem;">{{ slot.start_time.strftime('%I:%M %p') }}</span>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="w-100 text-center py-3 text-white-50 small font-mono">No classes assigned to you on {{ today_day }}.</div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+
+<!-- Start Session Modal (Glass Level 4) -->
+{% if current_slot %}
+<div class="modal fade glass-modal" id="startSessionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-bottom border-white-10 py-3 px-4">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-broadcast fs-4 text-purple"></i>
+                    <div>
+                        <h5 class="modal-title fw-bold font-display text-white mb-0">Confirm Attendance Initialization</h5>
+                        <span class="small text-white-50 font-mono">Lock 50m Geofence Center &amp; Open Biometric Scans</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <form method="POST" action="{{ url_for('faculty.start_session') }}" id="modalStartForm">
+                <input type="hidden" name="latitude" id="modal_lat_input">
+                <input type="hidden" name="longitude" id="modal_lng_input">
+                <input type="hidden" name="sim_time" value="{{ sim_time }}">
+                <input type="hidden" name="sim_day" value="{{ sim_day }}">
+
+                <div class="modal-body p-4">
+                    <div class="p-3 rounded-4 mb-3" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12);">
+                        <div class="row g-2 small text-white-50 font-mono">
+                            <div class="col-6">Subject: <strong class="text-white d-block font-display">{{ current_slot.subject.subject_name }}</strong></div>
+                            <div class="col-6">Class: <strong class="text-white d-block">{{ current_slot.classroom.class_name if current_slot.classroom else 'I B.E II AIML' }}</strong></div>
+                            <div class="col-6">Slot: <strong class="text-white d-block">Hour {{ current_slot.hour_number }} ({{ current_slot.start_time.strftime('%I:%M %p') }})</strong></div>
+                            <div class="col-6">Faculty: <strong class="text-white d-block">{{ faculty.user.name }}</strong></div>
+                        </div>
+                    </div>
+
+                    <div class="p-3 rounded-3 d-flex align-items-center gap-2 text-start small mb-0" style="background: rgba(167, 139, 250, 0.15); border: 1px solid rgba(167,139,250,0.3);">
+                        <i class="bi bi-geo-alt-fill fs-5 text-purple"></i>
+                        <div class="text-white-50 font-mono" style="font-size: 0.76rem;">
+                            Acquiring browser GPS coordinates to establish 50-meter classroom attendance perimeter...
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-top border-white-10 p-3 d-flex justify-content-between">
+                    <button type="button" class="btn btn-glass px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-glass btn-purple px-5" id="btnConfirmStart" onclick="acquireGpsAndSubmitModal()">
+                        <i class="bi bi-play-circle-fill me-1"></i> OK / Start Attendance
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let modalCoords = { lat: 11.0168, lng: 76.9558 };
+
+function acquireGpsAndSubmitModal() {
+    const btn = document.getElementById('btnConfirmStart');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Locking GPS Perimeter...';
+
+    if (!navigator.geolocation) {
+        document.getElementById('modal_lat_input').value = modalCoords.lat;
+        document.getElementById('modal_lng_input').value = modalCoords.lng;
+        document.getElementById('modalStartForm').submit();
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        (pos) => {
+            modalCoords.lat = pos.coords.latitude;
+            modalCoords.lng = pos.coords.longitude;
+            document.getElementById('modal_lat_input').value = modalCoords.lat;
+            document.getElementById('modal_lng_input').value = modalCoords.lng;
+            document.getElementById('modalStartForm').submit();
+        },
+        (err) => {
+            document.getElementById('modal_lat_input').value = modalCoords.lat;
+            document.getElementById('modal_lng_input').value = modalCoords.lng;
+            document.getElementById('modalStartForm').submit();
+        },
+        { enableHighAccuracy: true, timeout: 6000 }
+    );
+}
+</script>
+{% endblock %}

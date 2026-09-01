@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% block title %}Faculty Roster Management • Admin Console{% endblock %}
+
+{% block content %}
+<div class="glass-panel stagger">
+
+  <!-- Header -->
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div class="d-flex align-items-center gap-3">
+      <a href="{{ url_for('admin.dashboard') }}" class="btn btn-glass rounded-circle p-2" title="Back to Dashboard">
+        <i class="bi bi-arrow-left fs-5"></i>
+      </a>
+      <div>
+        <span class="badge-glass badge-purple mb-1">FACULTY DIRECTORY</span>
+        <h4 class="fw-bold font-display text-white mb-0">Faculty Staff Management</h4>
+        <span class="text-white-50 small font-mono">{{ faculty_list|length }} Faculty Members • CSE (AIML)</span>
+      </div>
+    </div>
+    <a href="{{ url_for('admin.add_faculty') }}" class="btn btn-glass btn-purple btn-magnetic px-4 py-2 font-display d-flex align-items-center gap-2">
+      <i class="bi bi-person-badge-fill"></i> Add New Faculty
+    </a>
+  </div>
+
+  <!-- Search & Filter Bar -->
+  <div class="glass-card tilt-card p-3 mb-4">
+    <div class="tilt-shine"></div>
+    <div class="row g-3 align-items-center">
+      <div class="col-12 col-md-8">
+        <div class="table-search-wrap" style="max-width: 100%;">
+          <i class="bi bi-search search-icon"></i>
+          <input type="text" class="glass-input table-search-input py-2" placeholder="Search by faculty name, staff ID, or designation..." data-table-search="facultyMasterTable">
+        </div>
+      </div>
+      <div class="col-12 col-md-4 text-md-end text-white-50 small font-mono">
+        Total <span class="text-purple fw-bold">{{ faculty_list|length }}</span> Faculty Profiles
+      </div>
+    </div>
+  </div>
+
+  <!-- Faculty Glass Table -->
+  <div class="glass-card tilt-card p-0 overflow-hidden">
+    <div class="tilt-shine"></div>
+    <div class="table-responsive">
+      <table class="glass-table align-middle mb-0" id="facultyMasterTable">
+        <thead>
+          <tr>
+            <th class="ps-4">Staff ID</th>
+            <th>Faculty Name</th>
+            <th>Official Email</th>
+            <th>Designation</th>
+            <th>Biometrics</th>
+            <th>Status</th>
+            <th class="text-end pe-4">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for f in faculty_list %}
+          {% set fe = f.user.face_embeddings.filter_by(is_active=True).first() if f.user else None %}
+          <tr>
+            <td class="ps-4">
+              <span class="badge-glass badge-purple font-mono">
+                {{ f.faculty_id }}
+              </span>
+            </td>
+            <td class="fw-semibold text-white font-display">
+              <div class="d-flex align-items-center gap-2">
+                <div class="avatar-circle" style="width: 32px; height: 32px; font-size: 0.75rem; background: rgba(167,139,250,0.2); color: var(--purple); display: flex; align-items: center; justify-content: center; border-radius: 50%;">
+                  {{ f.user.name[0] if f.user else '?' }}
+                </div>
+                <span>{{ f.user.name if f.user else 'N/A' }}</span>
+              </div>
+            </td>
+            <td class="text-white-50 small font-mono">{{ f.user.email if f.user else 'N/A' }}</td>
+            <td class="text-white-50 small font-mono">{{ f.designation }}</td>
+            <td>
+              {% if fe %}
+                <span class="badge-glass badge-green font-mono">
+                  <i class="bi bi-patch-check-fill me-1"></i>Enrolled ({{ fe.model_name }})
+                </span>
+              {% else %}
+                <a href="{{ url_for('admin.enroll_faculty_face', faculty_id=f.id) }}" class="badge-glass badge-red font-mono text-decoration-none">
+                  <i class="bi bi-camera-fill me-1"></i>Enroll Face
+                </a>
+              {% endif %}
+            </td>
+            <td>
+              {% if f.user and f.user.is_active %}
+                <span class="badge-glass badge-green font-mono">Active</span>
+              {% else %}
+                <span class="badge-glass badge-red font-mono">Inactive</span>
+              {% endif %}
+            </td>
+            <td class="text-end pe-4">
+              <div class="d-flex justify-content-end gap-1">
+                <a href="{{ url_for('admin.enroll_faculty_face', faculty_id=f.id) }}" class="btn btn-glass btn-sm py-1 px-2" title="Enroll Face Photo">
+                  <i class="bi bi-camera text-purple"></i>
+                </a>
+                <a href="{{ url_for('admin.edit_faculty', faculty_id=f.id) }}" class="btn btn-glass btn-sm py-1 px-2" title="Edit Faculty">
+                  <i class="bi bi-pencil-square text-amber"></i>
+                </a>
+                <form method="POST" action="{{ url_for('admin.toggle_faculty', faculty_id=f.id) }}" class="d-inline">
+                  <button type="submit" class="btn btn-glass btn-sm py-1 px-2" title="Toggle Active Status">
+                    <i class="bi {% if f.user and f.user.is_active %}bi-toggle-on text-green{% else %}bi-toggle-off text-red{% endif %}"></i>
+                  </button>
+                </form>
+                <form method="POST" action="{{ url_for('admin.delete_faculty', faculty_id=f.id) }}" class="d-inline" onsubmit="return confirm('WARNING: Are you sure you want to permanently delete faculty member {{ f.user.name }} ({{ f.faculty_id }})? All assigned timetable entries will also be removed.');">
+                  <button type="submit" class="btn btn-glass btn-danger-glass btn-sm py-1 px-2" title="Delete Faculty Member">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" class="text-center text-white-50 py-5 font-mono">No faculty members found. Click <strong>Add New Faculty</strong> above.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

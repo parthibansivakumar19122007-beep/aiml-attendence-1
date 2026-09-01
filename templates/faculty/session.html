@@ -1,0 +1,346 @@
+{% extends 'base.html' %}
+
+{% block title %}Live Session Command Center • Faculty Portal{% endblock %}
+
+{% block content %}
+<div class="glass-panel stagger">
+
+    <!-- Session Control Header Bar -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-3">
+            <a href="{{ url_for('faculty.dashboard') }}" class="btn btn-glass rounded-circle p-2" title="Back to Dashboard">
+                <i class="bi bi-arrow-left fs-5"></i>
+            </a>
+            <div>
+                <span class="badge-glass badge-purple mb-1">LIVE CONTROLLER</span>
+                <h4 class="fw-bold font-display text-white mb-0">Classroom Biometric Session Controller</h4>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+            {% if active_session %}
+                <a href="{{ url_for('faculty.export_session_csv', session_id=active_session.id) }}" class="btn btn-glass btn-magnetic py-2 px-3">
+                    <i class="bi bi-file-earmark-arrow-down me-1 text-purple"></i> Export CSV
+                </a>
+            {% endif %}
+            
+            {% if active_session and active_session.status == 'OPEN' %}
+                <span class="badge-glass badge-live fs-6 py-2 px-3">
+                    <span class="pulse-dot me-2"></span> LIVE &amp; ACCEPTING SCANS
+                </span>
+            {% elif active_session and active_session.status == 'CLOSED' %}
+                <span class="badge-glass badge-white fs-6 py-2 px-3">
+                    <i class="bi bi-lock-fill me-1"></i> SESSION CLOSED
+                </span>
+            {% else %}
+                <span class="badge-glass badge-amber fs-6 py-2 px-3">
+                    <i class="bi bi-clock-history me-1"></i> READY TO INITIALIZE
+                </span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Active Class Slot Summary Card -->
+    {% if current_slot %}
+        <div class="glass-card tilt-card holo-card card-accent-purple p-3 mb-4">
+            <div class="tilt-shine"></div>
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <span class="badge-glass badge-amber font-mono me-2">Hour {{ current_slot.hour_number }}</span>
+                    <strong class="text-white fs-5 font-display me-2">{{ current_slot.subject.short_name }}</strong>
+                    <span class="text-white-50 small font-mono">({{ current_slot.subject.subject_name }})</span>
+                    <div class="small text-white-50 mt-1 font-mono">
+                        Class: <strong class="text-white">{{ current_slot.classroom.class_name }}</strong> • Timing: <strong>{{ current_slot.start_time.strftime('%I:%M %p') }} – {{ current_slot.end_time.strftime('%I:%M %p') }}</strong> • Faculty: <strong>{{ faculty.user.name }}</strong>
+                    </div>
+                </div>
+                <div>
+                    <span class="badge-glass badge-purple font-mono">
+                        <i class="bi bi-shield-check me-1"></i> 50M GEOFENCE PERIMETER LOCKED
+                    </span>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- 4 Stats Cards Grid -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="glass-card tilt-card text-center p-3">
+                <div class="tilt-shine"></div>
+                <span class="small text-white-50 font-mono d-block">SESSION STATE</span>
+                <strong class="fs-6 text-white font-display" id="sessionStatusLabel">
+                    {{ active_session.status if active_session else 'NOT STARTED' }}
+                </strong>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="glass-card tilt-card text-center p-3">
+                <div class="tilt-shine"></div>
+                <span class="small text-white-50 font-mono d-block">VERIFIED PRESENT</span>
+                <strong class="fs-3 text-green font-display" id="livePresentCount" data-count="{{ active_session.attendance_records.filter_by(status='PRESENT').count() if active_session else 0 }}">
+                    {{ active_session.attendance_records.filter_by(status='PRESENT').count() if active_session else 0 }}
+                </strong>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="glass-card tilt-card text-center p-3">
+                <div class="tilt-shine"></div>
+                <span class="small text-white-50 font-mono d-block">REJECTED PROXIMITY</span>
+                <strong class="fs-3 text-red font-display" id="liveRejectedCount" data-count="{{ active_session.attendance_records.filter_by(status='REJECTED').count() if active_session else 0 }}">
+                    {{ active_session.attendance_records.filter_by(status='REJECTED').count() if active_session else 0 }}
+                </strong>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="glass-card tilt-card text-center p-3">
+                <div class="tilt-shine"></div>
+                <span class="small text-white-50 font-mono d-block">LOCKED GPS COORD</span>
+                <span class="small fw-semibold text-purple font-mono d-block" id="facultyGpsCoords">
+                    {% if active_session and active_session.faculty_lat %}
+                        {{ active_session.faculty_lat|round(4) }}, {{ active_session.faculty_lng|round(4) }}
+                    {% else %}
+                        Pending GPS Lock
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN ACTION CONTROLS: START OR END -->
+    {% if not active_session or active_session.status != 'OPEN' %}
+        {% if current_slot and (not active_session or active_session.status != 'CLOSED') %}
+            <div class="glass-card tilt-card text-center p-4 mb-4" style="border-color: rgba(251,191,36,0.3);">
+                <div class="tilt-shine"></div>
+                <h5 class="fw-bold text-white font-display mb-2">Initialize Geofence &amp; Open Attendance</h5>
+                <p class="text-white-50 small mb-3 font-mono">
+                    Your browser GPS coordinates will be captured and locked as the center point of the 50-meter perimeter.
+                </p>
+
+                <form method="POST" action="{{ url_for('faculty.start_session') }}" id="startSessionForm">
+                    <input type="hidden" name="latitude" id="faculty_lat_input">
+                    <input type="hidden" name="longitude" id="faculty_lng_input">
+                    <input type="hidden" name="sim_time" value="{{ sim_time }}">
+                    <input type="hidden" name="sim_day" value="{{ sim_day }}">
+
+                    <button type="button" class="btn btn-glass btn-purple btn-magnetic px-5 py-3 font-display fs-6" id="btnStartTrigger" onclick="acquireFacultyGPSAndStart()">
+                        <i class="bi bi-play-circle-fill fs-4 me-1"></i> [ START ATTENDANCE (50m LOCK) ]
+                    </button>
+                </form>
+            </div>
+        {% elif active_session and active_session.status == 'CLOSED' %}
+            <div class="glass-card text-center p-4 mb-4">
+                <i class="bi bi-check-circle-fill text-green fs-2 d-block mb-2"></i>
+                <h5 class="fw-bold text-white font-display">Attendance Session Finalized</h5>
+                <p class="small text-white-50 mb-0 font-mono">All biometric scans have been permanently committed to the master log.</p>
+            </div>
+        {% endif %}
+    {% else %}
+        <!-- SESSION IS ACTIVE: SHOW END ATTENDANCE TRIGGER -->
+        <div class="glass-card holo-card text-center p-4 mb-4" style="border-color: rgba(52,211,153,0.4); background: rgba(52,211,153,0.08);">
+            <div class="d-flex align-items-center justify-content-center gap-2 mb-2">
+                <span class="pulse-dot"></span>
+                <h5 class="fw-bold text-green font-display mb-0">Live Biometric Attendance Session Active</h5>
+            </div>
+            <p class="text-white-50 small mb-3 font-mono">
+                Students within the 50-meter radius are currently authenticating. Click <strong>[ CLOSE ATTENDANCE SESSION ]</strong> to lock the register.
+            </p>
+
+            <form method="POST" action="{{ url_for('faculty.end_session', session_id=active_session.id) }}" onsubmit="return confirm('Are you sure you want to CLOSE this attendance session?');">
+                <button type="submit" class="btn btn-glass btn-danger-glass btn-magnetic px-5 py-3 font-display fs-6">
+                    <i class="bi bi-stop-circle-fill fs-4 me-1"></i> [ CLOSE ATTENDANCE SESSION ]
+                </button>
+            </form>
+        </div>
+    {% endif %}
+
+    <!-- LIVE VERIFIED STUDENTS FEED TABLE -->
+    <div class="glass-card tilt-card p-0 overflow-hidden">
+        <div class="tilt-shine"></div>
+        <div class="p-3 border-bottom border-white-10 d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <h6 class="fw-bold text-white mb-0 font-display">
+                <i class="bi bi-people-fill me-2 text-purple"></i>Live Student Face Verification Stream
+            </h6>
+            <div class="d-flex align-items-center gap-3">
+                <div class="table-search-wrap">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" class="glass-input table-search-input py-1" placeholder="Filter student roll..." data-table-search="liveScansTable">
+                </div>
+                <span class="badge-glass badge-cyan font-mono" id="pollStatusIndicator">
+                    <span class="spinner-border spinner-border-sm me-1"></span> POLLING
+                </span>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="glass-table align-middle mb-0" id="liveScansTable">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Roll No</th>
+                        <th>Student Name</th>
+                        <th>Timestamp</th>
+                        <th>Distance</th>
+                        <th>Confidence</th>
+                        <th>Biometric State</th>
+                        <th class="text-end pe-4">Manual Action</th>
+                    </tr>
+                </thead>
+                <tbody id="liveScansTableBody">
+                    {% if active_session and active_session.attendance_records.count() > 0 %}
+                        {% for rec in active_session.attendance_records %}
+                            <tr id="row-record-{{ rec.id }}">
+                                <td class="ps-4"><span class="badge-glass badge-white font-mono">{{ rec.student.student_id if rec.student else '' }}</span></td>
+                                <td class="fw-semibold text-white font-display">{{ rec.student.user.name if rec.student and rec.student.user else '' }}</td>
+                                <td class="small text-white-50 font-mono">{{ rec.scanned_at.strftime('%I:%M:%S %p') if rec.scanned_at else '' }}</td>
+                                <td class="small font-mono">
+                                    {% if rec.distance_m is not none %}
+                                        <span class="badge-glass {% if rec.distance_m <= 50 %}badge-green{% else %}badge-red{% endif %}">
+                                            {{ rec.distance_m }}m
+                                        </span>
+                                    {% else %}
+                                        <span class="text-white-50">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td class="small font-mono">
+                                    {% if rec.face_confidence is not none %}
+                                        <span class="badge-glass badge-cyan">
+                                            {{ (rec.face_confidence * 100)|round(1) }}%
+                                        </span>
+                                    {% else %}
+                                        <span class="text-white-50">-</span>
+                                    {% endif %}
+                                </td>
+                                <td id="status-badge-{{ rec.id }}">
+                                    {% if rec.status == 'PRESENT' %}
+                                        <span class="badge-glass badge-green">PRESENT &check;</span>
+                                    {% else %}
+                                        <span class="badge-glass badge-red">REJECTED ({{ rec.rejection_reason }})</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-4">
+                                    <button type="button" class="btn btn-glass btn-sm py-1 px-2 font-mono" onclick="toggleOverride({{ active_session.id }}, {{ rec.id }})">
+                                        <i class="bi bi-arrow-repeat me-1"></i> Override
+                                    </button>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-white-50 font-mono">
+                                {% if active_session and active_session.status == 'OPEN' %}
+                                    <span class="spinner-grow spinner-grow-sm text-purple me-2"></span>
+                                    Waiting for student face recognition scans...
+                                {% else %}
+                                    No attendance records in this session yet.
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let currentFacultyCoords = { lat: 11.0168, lng: 76.9558 };
+
+function acquireFacultyGPSAndStart() {
+    const btnTrigger = document.getElementById('btnStartTrigger');
+    btnTrigger.disabled = true;
+    btnTrigger.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Acquiring GPS Lock...';
+
+    if (!navigator.geolocation) {
+        document.getElementById('faculty_lat_input').value = currentFacultyCoords.lat;
+        document.getElementById('faculty_lng_input').value = currentFacultyCoords.lng;
+        document.getElementById('startSessionForm').submit();
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        (pos) => {
+            currentFacultyCoords.lat = pos.coords.latitude;
+            currentFacultyCoords.lng = pos.coords.longitude;
+            document.getElementById('faculty_lat_input').value = currentFacultyCoords.lat;
+            document.getElementById('faculty_lng_input').value = currentFacultyCoords.lng;
+            document.getElementById('startSessionForm').submit();
+        },
+        (err) => {
+            document.getElementById('faculty_lat_input').value = currentFacultyCoords.lat;
+            document.getElementById('faculty_lng_input').value = currentFacultyCoords.lng;
+            document.getElementById('startSessionForm').submit();
+        },
+        { enableHighAccuracy: true, timeout: 8000 }
+    );
+}
+
+function toggleOverride(sessionId, recordId) {
+    fetch(`/faculty/session/${sessionId}/override/${recordId}`, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            const badgeEl = document.getElementById(`status-badge-${recordId}`);
+            if (badgeEl) {
+                if (data.new_status === 'PRESENT') {
+                    badgeEl.innerHTML = `<span class="badge-glass badge-green">PRESENT &check;</span>`;
+                } else {
+                    badgeEl.innerHTML = `<span class="badge-glass badge-red">REJECTED (Manual override)</span>`;
+                }
+            }
+            window.Toast.success('Record status overridden successfully.');
+        }
+    })
+    .catch(err => {
+        console.error('Override error:', err);
+        window.Toast.error('Override operation failed.');
+    });
+}
+
+{% if active_session and active_session.status == 'OPEN' %}
+function pollLiveFeed() {
+    fetch('/faculty/api/session/{{ active_session.id }}/live-feed')
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) return;
+
+            document.getElementById('livePresentCount').innerText = data.present_count;
+            document.getElementById('liveRejectedCount').innerText = data.rejected_count;
+
+            const tbody = document.getElementById('liveScansTableBody');
+            if (data.records && data.records.length > 0) {
+                let html = '';
+                data.records.forEach(r => {
+                    const badgeClass = r.status === 'PRESENT' ? 'badge-green' : 'badge-red';
+                    const distBadge = r.distance_m <= 50 ? 'badge-green' : 'badge-red';
+                    const confHtml = r.face_confidence !== null ? `<span class="badge-glass badge-cyan font-mono">${(r.face_confidence * 100).toFixed(1)}%</span>` : `<span class="text-white-50">-</span>`;
+                    html += `
+                        <tr id="row-record-${r.id}">
+                            <td class="ps-4"><span class="badge-glass badge-white font-mono">${r.student_id}</span></td>
+                            <td class="fw-semibold text-white font-display">${r.student_name}</td>
+                            <td class="small text-white-50 font-mono">${r.scanned_at}</td>
+                            <td class="small font-mono"><span class="badge-glass ${distBadge}">${r.distance_m !== null ? r.distance_m + 'm' : 'N/A'}</span></td>
+                            <td class="small font-mono">${confHtml}</td>
+                            <td id="status-badge-${r.id}"><span class="badge-glass ${badgeClass}">${r.status}</span></td>
+                            <td class="text-end pe-4">
+                                <button type="button" class="btn btn-glass btn-sm py-1 px-2 font-mono" onclick="toggleOverride({{ active_session.id }}, ${r.id})">
+                                    <i class="bi bi-arrow-repeat me-1"></i> Override
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                tbody.innerHTML = html;
+            }
+        })
+        .catch(err => console.error('Poll error:', err));
+}
+
+setInterval(pollLiveFeed, 3000);
+{% endif %}
+</script>
+{% endblock %}

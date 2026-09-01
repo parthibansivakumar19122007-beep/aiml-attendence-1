@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+
+{% block title %}Faculty Attendance History • Spatial AI Portal{% endblock %}
+
+{% block content %}
+<div class="glass-panel stagger">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-3">
+            <a href="{{ url_for('faculty.dashboard') }}" class="btn btn-glass rounded-circle p-2" title="Back to Dashboard">
+                <i class="bi bi-arrow-left fs-5"></i>
+            </a>
+            <div>
+                <span class="badge-glass badge-purple mb-1">FACULTY PORTAL</span>
+                <h4 class="fw-bold font-display text-white mb-0">Attendance History &amp; Conducted Logs</h4>
+                <span class="small text-white-50 font-mono">{{ faculty.user.name }} ({{ faculty.faculty_id }})</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. Self Attendance History -->
+    <div class="glass-card tilt-card p-0 overflow-hidden mb-4">
+        <div class="tilt-shine"></div>
+        <div class="p-3 border-bottom border-white-10 d-flex justify-content-between align-items-center">
+            <h6 class="fw-bold text-white mb-0 font-display">
+                <i class="bi bi-person-check me-2 text-purple"></i>My Morning &amp; Evening Face Biometric Logs
+            </h6>
+            <span class="badge-glass badge-white font-mono">{{ self_attendance|length }} RECORDS</span>
+        </div>
+        <div class="table-responsive">
+            <table class="glass-table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Date</th>
+                        <th>Type</th>
+                        <th>Timestamp</th>
+                        <th>GPS Telemetry</th>
+                        <th class="text-end pe-4">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if self_attendance %}
+                        {% for rec in self_attendance %}
+                            <tr>
+                                <td class="ps-4 text-white font-mono">{{ rec.attendance_date.strftime('%d-%m-%Y') }}</td>
+                                <td>
+                                    {% if rec.attendance_type == 'FACULTY_MORNING' %}
+                                        <span class="badge-glass badge-cyan font-mono">Morning Arrival</span>
+                                    {% else %}
+                                        <span class="badge-glass badge-purple font-mono">Evening Departure</span>
+                                    {% endif %}
+                                </td>
+                                <td class="small text-white-50 font-mono">{{ rec.scanned_at.strftime('%I:%M:%S %p') }}</td>
+                                <td class="small text-white-50 font-mono">
+                                    {% if rec.latitude and rec.longitude %}
+                                        {{ rec.latitude|round(4) }}, {{ rec.longitude|round(4) }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-4">
+                                    <span class="badge-glass badge-green">PRESENT &check;</span>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-white-50 font-mono">
+                                No self-attendance logs found.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 2. Conducted Sessions History -->
+    <div class="glass-card tilt-card p-0 overflow-hidden">
+        <div class="tilt-shine"></div>
+        <div class="p-3 border-bottom border-white-10 d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <h6 class="fw-bold text-white mb-0 font-display">
+                <i class="bi bi-journal-bookmark me-2 text-purple"></i>Class Attendance Sessions Conducted
+            </h6>
+            <div class="table-search-wrap">
+                <i class="bi bi-search search-icon"></i>
+                <input type="text" class="glass-input table-search-input py-1" placeholder="Filter session history..." data-table-search="facConductedTable">
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="glass-table align-middle mb-0" id="facConductedTable">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Date</th>
+                        <th>Hour</th>
+                        <th>Subject</th>
+                        <th>Class</th>
+                        <th>Opened At</th>
+                        <th>Closed At</th>
+                        <th>Present Count</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if conducted_sessions %}
+                        {% for sess in conducted_sessions %}
+                            <tr>
+                                <td class="ps-4 text-white font-mono">{{ sess.date.strftime('%d-%m-%Y') if sess.date else '' }}</td>
+                                <td>
+                                    <span class="badge-glass badge-amber font-mono">Hour {{ sess.timetable_entry.hour_number if sess.timetable_entry else 'N/A' }}</span>
+                                </td>
+                                <td class="fw-semibold text-white font-display">{{ sess.timetable_entry.subject.subject_name if sess.timetable_entry and sess.timetable_entry.subject else 'N/A' }}</td>
+                                <td class="text-white-50 small font-mono">{{ sess.timetable_entry.classroom.class_name if sess.timetable_entry and sess.timetable_entry.classroom else 'I B.E II AIML' }}</td>
+                                <td class="small text-white-50 font-mono">{{ sess.opened_at.strftime('%I:%M %p') if sess.opened_at else '' }}</td>
+                                <td class="small text-white-50 font-mono">{{ sess.closed_at.strftime('%I:%M %p') if sess.closed_at else 'Active' }}</td>
+                                <td>
+                                    <span class="badge-glass badge-green font-mono">
+                                        {{ sess.attendance_records.filter_by(status='PRESENT').count() }} Present
+                                    </span>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <a href="{{ url_for('faculty.session_view', session_id=sess.id) }}" class="btn btn-glass btn-sm py-1 px-2 font-mono">
+                                            <i class="bi bi-eye"></i> View
+                                        </a>
+                                        <a href="{{ url_for('faculty.export_session_csv', session_id=sess.id) }}" class="btn btn-glass btn-sm py-1 px-2 font-mono">
+                                            <i class="bi bi-file-earmark-arrow-down"></i> CSV
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-white-50 font-mono">
+                                No class sessions conducted yet.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

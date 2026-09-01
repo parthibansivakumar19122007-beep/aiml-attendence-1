@@ -1,0 +1,240 @@
+{% extends 'base.html' %}
+
+{% block title %}Student Dashboard • Spatial AI Smart Campus{% endblock %}
+
+{% block content %}
+<div class="glass-panel stagger">
+
+    <!-- Top Hero Bar -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div class="d-flex align-items-center gap-3">
+            <div class="avatar-circle fs-3 fw-bold text-cyan" style="width: 58px; height: 58px; background: rgba(34, 211, 238, 0.18); border: 2px solid var(--cyan); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 25px var(--cyan-glow);">
+                {{ student.user.name[0] }}
+            </div>
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="badge-glass badge-cyan">STUDENT PORTAL</span>
+                    {% if has_face %}
+                        <span class="badge-glass badge-green"><i class="bi bi-shield-check me-1"></i> Biometrics Enrolled</span>
+                    {% else %}
+                        <span class="badge-glass badge-red"><i class="bi bi-camera-video-off-fill me-1"></i> Face Missing</span>
+                    {% endif %}
+                </div>
+                <h3 class="fw-bold font-display text-white mb-0">Welcome, {{ student.user.name }}! 👋</h3>
+                <span class="small text-white-50">
+                    Roll No: <strong class="text-cyan font-mono">{{ student.student_id }}</strong> • Class: <strong>{{ student.classroom.class_name if student.classroom else 'I B.E II AIML' }} (Sec {{ student.section }})</strong>
+                </span>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <div class="glass-card py-2 px-3 d-flex align-items-center gap-2">
+                <i class="bi bi-calendar3 text-cyan"></i>
+                <span class="small text-white font-mono">{{ today_day }}, {{ today_date }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Live Sessions Notification Banner -->
+    {% if open_sessions and open_sessions|length > 0 %}
+        <div class="glass-card holo-card card-accent-cyan p-3 mb-4" style="background: rgba(34, 211, 238, 0.08);">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-3">
+                    <span class="badge-glass badge-live fs-6 py-2 px-3">
+                        <i class="bi bi-broadcast me-1"></i> LIVE SESSION
+                    </span>
+                    <div>
+                        <strong class="text-white small d-block font-display fs-6">
+                            ⚡ SESSION OPEN: {{ open_sessions[0][2].short_name }} (Hour {{ open_sessions[0][1].hour_number }})
+                        </strong>
+                        <span class="text-white-50 font-mono" style="font-size: 0.75rem;">
+                            Subject: <strong>{{ open_sessions[0][2].subject_name }}</strong> • Faculty: <strong>{{ open_sessions[0][1].faculty.user.name }}</strong> • 50m Geofence
+                        </span>
+                    </div>
+                </div>
+                <a href="{{ url_for('student.scan') }}" class="btn btn-glass btn-cyan btn-magnetic px-4 py-2 fw-bold d-flex align-items-center gap-2">
+                    <i class="bi bi-camera-video-fill"></i> Verify Face Now
+                </a>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Dual Hero 3D Cards Grid -->
+    <div class="row g-4 mb-4">
+        <!-- Card 1: Face Attendance Action Hero -->
+        <div class="col-12 col-md-6">
+            <div class="glass-card tilt-card holo-card card-accent-cyan p-4 h-100 d-flex flex-column justify-content-between">
+                <div class="tilt-shine"></div>
+                <div>
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="stat-icon" style="background: rgba(34,211,238,0.18); color: var(--cyan);">
+                            <i class="bi bi-camera-video-fill fs-4"></i>
+                        </div>
+                        <span class="badge-glass badge-cyan">AI OPTICAL SCAN</span>
+                    </div>
+                    <h5 class="fw-bold text-white font-display mb-1">Mark Face Attendance</h5>
+                    <p class="small text-white-50 mb-3">
+                        Instant biometric verification with 128-dimensional facial embedding matching and 50-meter Haversine GPS geofence security check.
+                    </p>
+                </div>
+                <a href="{{ url_for('student.scan') }}" class="btn btn-glass btn-cyan btn-magnetic w-100 py-3 mt-2 font-display fs-6">
+                    <i class="bi bi-camera-fill fs-5"></i> Launch AI Face Recognition
+                </a>
+            </div>
+        </div>
+
+        <!-- Card 2: Attendance Summary Hero -->
+        <div class="col-12 col-md-6">
+            <div class="glass-card tilt-card holo-card card-accent-green p-4 h-100 d-flex flex-column justify-content-between">
+                <div class="tilt-shine"></div>
+                <div>
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="stat-icon" style="background: rgba(52,211,153,0.18); color: var(--green);">
+                            <i class="bi bi-pie-chart-fill fs-4"></i>
+                        </div>
+                        <span class="badge-glass badge-green">ATTENDANCE REPORT</span>
+                    </div>
+                    <h5 class="fw-bold text-white font-display mb-1">Subject Analytics &amp; Eligibility</h5>
+                    <p class="small text-white-50 mb-3">
+                        Standing: <strong class="text-green font-mono">{{ overall_percentage }}%</strong> • Total {{ total_present }} / {{ total_conducted }} conducted hours. View full breakdown and exam threshold status.
+                    </p>
+                </div>
+                <a href="{{ url_for('student.attendance') }}" class="btn btn-glass btn-magnetic w-100 py-3 mt-2 font-display fs-6">
+                    <i class="bi bi-file-earmark-bar-graph fs-5 text-green"></i> View Full Subject Breakdown
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2-Column Grid: Left Circular Progress Gauge & Right Today's Face Activity -->
+    <div class="row g-4 mb-4">
+
+        <!-- Left: Animated Circular Attendance Gauge -->
+        <div class="col-12 col-lg-5">
+            <div class="glass-card tilt-card h-100 p-4 text-center d-flex flex-column justify-content-between">
+                <div class="tilt-shine"></div>
+                <h6 class="fw-bold text-white mb-3 text-start font-display">
+                    <i class="bi bi-shield-check text-cyan me-2"></i>Attendance Eligibility Standing
+                </h6>
+
+                <!-- Spatial Gauge -->
+                <div class="gauge-wrap my-2" data-pct="{{ overall_percentage }}">
+                    <div class="gauge-glow-ring"></div>
+                    <svg class="gauge-svg" viewBox="0 0 160 160">
+                        <circle class="gauge-track" cx="80" cy="80" r="75"></circle>
+                        <circle class="gauge-bar" cx="80" cy="80" r="75"></circle>
+                    </svg>
+                    <div class="gauge-val">
+                        <span class="fs-2 fw-bold text-white font-display" data-count="{{ overall_percentage }}">{{ overall_percentage }}</span>
+                        <span class="small text-white-50 font-mono" style="font-size: 0.72rem;">% ELIGIBILITY</span>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    {% if overall_percentage >= 85 %}
+                        <div class="risk-card risk-low text-start">
+                            <div>
+                                <strong class="text-green small d-block font-display">EXCELLENT STANDING (&ge;85%)</strong>
+                                <span class="text-white-50" style="font-size: 0.72rem;">Full examination eligibility &amp; academic clearance.</span>
+                            </div>
+                            <i class="bi bi-check-circle-fill fs-4 text-green"></i>
+                        </div>
+                    {% elif overall_percentage >= 75 %}
+                        <div class="risk-card risk-medium text-start">
+                            <div>
+                                <strong class="text-amber small d-block font-display">ELIGIBLE FOR EXAMS (75–84%)</strong>
+                                <span class="text-white-50" style="font-size: 0.72rem;">Meets minimum Anna University / Autonomous criteria.</span>
+                            </div>
+                            <i class="bi bi-exclamation-circle-fill fs-4 text-amber"></i>
+                        </div>
+                    {% else %}
+                        <div class="risk-card risk-high text-start">
+                            <div>
+                                <strong class="text-red small d-block font-display">ATTENDANCE SHORTAGE (&lt;75%)</strong>
+                                <span class="text-white-50" style="font-size: 0.72rem;">Immediate makeup sessions or leave sanction required.</span>
+                            </div>
+                            <i class="bi bi-exclamation-triangle-fill fs-4 text-red"></i>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="p-3 rounded-3 text-start small" style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255,255,255,0.08);">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-white-50">Conducted Hours:</span>
+                        <strong class="text-white font-mono" data-count="{{ total_conducted }}">{{ total_conducted }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-white-50">Hours Present:</span>
+                        <strong class="text-green font-mono" data-count="{{ total_present }}">{{ total_present }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-white-50">Hours Absent:</span>
+                        <strong class="text-red font-mono" data-count="{{ total_conducted - total_present }}">{{ total_conducted - total_present }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Today's Face Recognition Activity Stream -->
+        <div class="col-12 col-lg-7">
+            <div class="glass-card tilt-card h-100 p-0 overflow-hidden">
+                <div class="tilt-shine"></div>
+                <div class="p-3 border-bottom border-white-10 d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold text-white mb-0 font-display">
+                        <i class="bi bi-clock-history text-cyan me-2"></i>Today's Verified Face Attendance
+                    </h6>
+                    <span class="badge-glass badge-cyan font-mono">{{ today_records|length }} VERIFIED TODAY</span>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="glass-table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-4">Hour</th>
+                                <th>Subject</th>
+                                <th>Timestamp</th>
+                                <th>Distance</th>
+                                <th class="text-end pe-4">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if today_records %}
+                                {% for rec, sess, tt, sub in today_records %}
+                                    <tr>
+                                        <td class="ps-4">
+                                            <span class="badge-glass badge-cyan font-mono">Hour {{ tt.hour_number if tt else 'N/A' }}</span>
+                                        </td>
+                                        <td>
+                                            <strong class="text-white">{{ sub.short_name if sub else 'General' }}</strong>
+                                            <div class="small text-white-50" style="font-size: 0.72rem;">{{ sub.subject_name if sub else '' }}</div>
+                                        </td>
+                                        <td class="small text-white-50 font-mono">{{ rec.scanned_at.strftime('%I:%M:%S %p') }}</td>
+                                        <td class="small font-mono">
+                                            <span class="badge-glass badge-green">
+                                                <i class="bi bi-geo-alt-fill me-1"></i>{{ rec.distance_m }}m
+                                            </span>
+                                        </td>
+                                        <td class="text-end pe-4">
+                                            <span class="badge-glass badge-green">
+                                                PRESENT &check;
+                                            </span>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4 text-white-50">
+                                        No attendance verified yet today. When a session is active, click <strong>[ Launch AI Face Recognition ]</strong> above.
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}

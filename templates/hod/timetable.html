@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+
+{% block title %}Timetable Management • HOD Executive Portal{% endblock %}
+
+{% block content %}
+<div class="glass-panel stagger">
+
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-3">
+            <a href="{{ url_for('hod.dashboard') }}" class="btn btn-glass rounded-circle p-2" title="Back to Dashboard">
+                <i class="bi bi-arrow-left fs-5"></i>
+            </a>
+            <div>
+                <span class="badge-glass badge-amber mb-1">TIMETABLE MANAGEMENT</span>
+                <h4 class="fw-bold font-display text-white mb-0">Timetable Master Schedule</h4>
+            </div>
+        </div>
+
+        <button type="button" class="btn btn-glass btn-amber btn-magnetic px-4 font-display" data-bs-toggle="modal" data-bs-target="#addSlotModal">
+            <i class="bi bi-plus-circle-fill me-1"></i> Add Timetable Slot
+        </button>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="glass-card tilt-card p-3 mb-4">
+        <div class="tilt-shine"></div>
+        <form method="GET" action="{{ url_for('hod.timetable') }}" class="row g-3 align-items-center">
+            <div class="col-12 col-md-4">
+                <label for="dayFilter" class="form-label text-white-50 small mb-1 font-mono">Filter by Day of Week</label>
+                <select name="day" id="dayFilter" class="glass-input">
+                    <option value="">-- All Days (Monday - Saturday) --</option>
+                    {% for d in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] %}
+                        <option value="{{ d }}" {% if filter_day == d %}selected{% endif %}>{{ d }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 col-md-4">
+                <label for="facultyFilter" class="form-label text-white-50 small mb-1 font-mono">Filter by Faculty Member</label>
+                <select name="faculty_id" id="facultyFilter" class="glass-input">
+                    <option value="">-- All Faculty Members --</option>
+                    {% for f in faculty_list %}
+                        <option value="{{ f.id }}" {% if filter_faculty == f.id %}selected{% endif %}>{{ f.user.name }} ({{ f.faculty_id }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 col-md-4 d-flex align-items-end gap-2">
+                <button type="submit" class="btn btn-glass btn-amber py-2 px-4 flex-fill font-display">Apply Filters</button>
+                <a href="{{ url_for('hod.timetable') }}" class="btn btn-glass py-2 px-3 font-mono">Reset</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Timetable Slots Master Table -->
+    <div class="glass-card tilt-card p-0 overflow-hidden">
+        <div class="tilt-shine"></div>
+        <div class="p-3 border-bottom border-white-10 d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <h6 class="fw-bold text-white mb-0 font-display">
+                <i class="bi bi-calendar-grid text-amber me-2"></i>Master Scheduled Slots ({{ all_slots|length }} Active Slots)
+            </h6>
+            <div class="table-search-wrap">
+                <i class="bi bi-search search-icon"></i>
+                <input type="text" class="glass-input table-search-input py-1" placeholder="Filter timetable..." data-table-search="hodTimetableTable">
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="glass-table align-middle mb-0" id="hodTimetableTable">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Day</th>
+                        <th>Hour</th>
+                        <th>Timing</th>
+                        <th>Subject Title</th>
+                        <th>Faculty In-Charge</th>
+                        <th>Status</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if all_slots %}
+                        {% for slot in all_slots %}
+                            <tr>
+                                <td class="ps-4 fw-bold text-white font-display">{{ slot.day_of_week }}</td>
+                                <td><span class="badge-glass badge-amber font-mono">Hour {{ slot.hour_number }}</span></td>
+                                <td class="small font-mono text-white-50">{{ slot.start_time.strftime('%I:%M %p') }} – {{ slot.end_time.strftime('%I:%M %p') }}</td>
+                                <td>
+                                    <strong class="text-white font-display">{{ slot.subject.short_name }}</strong>
+                                    <div class="small text-white-50 font-mono" style="font-size: 0.72rem;">{{ slot.subject.subject_name }}</div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-white font-display">{{ slot.faculty.user.name }}</div>
+                                    <div class="small text-white-50 font-mono" style="font-size: 0.72rem;">{{ slot.faculty.faculty_id }}</div>
+                                </td>
+                                <td>
+                                    {% if slot.is_active %}
+                                        <span class="badge-glass badge-green font-mono">ACTIVE</span>
+                                    {% else %}
+                                        <span class="badge-glass badge-red font-mono">INACTIVE</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-4">
+                                    <div class="d-flex justify-content-end gap-1">
+                                        <form method="POST" action="{{ url_for('hod.toggle_timetable', slot_id=slot.id) }}" class="d-inline">
+                                            <button type="submit" class="btn btn-glass btn-sm py-1 px-2 font-mono" title="Toggle Active Status">
+                                                <i class="bi bi-power"></i>
+                                            </button>
+                                        </form>
+                                        <form method="POST" action="{{ url_for('hod.delete_timetable', slot_id=slot.id) }}" class="d-inline" onsubmit="return confirm('Delete this slot from the master timetable?');">
+                                            <button type="submit" class="btn btn-glass btn-danger-glass btn-sm py-1 px-2" title="Delete Slot">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-white-50 font-mono">No timetable slots match the selected filters.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- GLASS MODAL: ADD SLOT (Glass L4) -->
+<div class="modal fade glass-modal" id="addSlotModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-bottom border-white-10 py-3 px-4">
+                <h5 class="modal-title fw-bold font-display text-white mb-0">Add Master Timetable Slot</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <form method="POST" action="{{ url_for('hod.add_timetable') }}" data-validate>
+                <div class="modal-body p-4">
+                    <input type="hidden" name="class_id" value="1">
+                    
+                    <div class="form-group-glass mb-3 text-start">
+                        <label>Day of Week</label>
+                        <select name="day_of_week" class="glass-input" required>
+                            {% for d in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] %}
+                                <option value="{{ d }}">{{ d }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group-glass mb-3 text-start">
+                        <label>Hour Number (1 - 7)</label>
+                        <input type="number" name="hour_number" min="1" max="7" class="glass-input" required placeholder="e.g. 2">
+                    </div>
+
+                    <div class="form-group-glass mb-3 text-start">
+                        <label>Curriculum Subject</label>
+                        <select name="subject_id" class="glass-input" required>
+                            {% for sub in subjects_list %}
+                                <option value="{{ sub.id }}">{{ sub.short_name }} - {{ sub.subject_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group-glass mb-3 text-start">
+                        <label>Faculty In-Charge</label>
+                        <select name="faculty_id" class="glass-input" required>
+                            {% for fac in faculty_list %}
+                                <option value="{{ fac.id }}">{{ fac.user.name }} ({{ fac.faculty_id }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6 text-start form-group-glass">
+                            <label>Start Time</label>
+                            <input type="time" name="start_time" class="glass-input" required>
+                        </div>
+                        <div class="col-6 text-start form-group-glass">
+                            <label>End Time</label>
+                            <input type="time" name="end_time" class="glass-input" required>
+                        </div>
+                    </div>
+
+                    <div class="form-check text-start">
+                        <input class="form-check-input" type="checkbox" name="is_active" id="is_active_chk" checked>
+                        <label class="form-check-input-label text-white small ms-1 font-mono" for="is_active_chk">
+                            Activate slot immediately in timetable
+                        </label>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-top border-white-10 p-3 d-flex justify-content-between">
+                    <button type="button" class="btn btn-glass px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-glass btn-amber px-5 font-display">Commit Slot</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
