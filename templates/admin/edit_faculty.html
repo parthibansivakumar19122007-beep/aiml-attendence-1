@@ -11,12 +11,11 @@
     <div>
       <span class="badge-glass badge-purple mb-1">FACULTY PROFILE</span>
       <h4 class="fw-bold font-display text-white mb-0">Modify Faculty Profile</h4>
-      <span class="text-white-50 small font-mono">Staff ID: {{ f.faculty_id }} • {{ f.user.name }}</span>
+      <span class="text-white-50 small font-mono">Username: {{ f.user.username }} • Staff ID: {{ f.faculty_id }}</span>
     </div>
   </div>
 
   <div class="glass-card tilt-card p-4">
-    <div class="tilt-shine"></div>
     <form method="POST" action="{{ url_for('admin.edit_faculty', faculty_id=f.id) }}" data-validate>
       <div class="row g-3 mb-3">
         <div class="col-12 col-md-6 form-group-glass">
@@ -24,25 +23,43 @@
           <input type="text" name="name" class="glass-input" required value="{{ f.user.name if f.user else '' }}">
         </div>
         <div class="col-12 col-md-6 form-group-glass">
-          <label>Faculty Staff ID</label>
-          <input type="text" name="faculty_id" class="glass-input" required value="{{ f.faculty_id }}">
+          <label>Login Username</label>
+          <input type="text" name="username" class="glass-input" required value="{{ f.user.username if f.user else '' }}">
         </div>
       </div>
 
       <div class="row g-3 mb-3">
         <div class="col-12 col-md-6 form-group-glass">
-          <label>Official Email</label>
-          <input type="email" name="email" class="glass-input" required value="{{ f.user.email if f.user else '' }}">
+          <label>Faculty Staff ID</label>
+          <input type="text" name="faculty_id" class="glass-input" readonly value="{{ f.faculty_id }}">
         </div>
         <div class="col-12 col-md-6 form-group-glass">
-          <label>Update Password (leave blank to keep current)</label>
-          <input type="password" name="password" class="glass-input" placeholder="New password...">
+          <label>Official Institutional Email</label>
+          <input type="email" name="email" class="glass-input" required value="{{ f.user.email if f.user else '' }}">
+        </div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-md-6 form-group-glass">
+          <label>Assigned Department</label>
+          <input type="text" name="department" class="glass-input" value="{{ f.user.department if f.user else 'CSE-AIML' }}" required>
+        </div>
+        <div class="col-12 col-md-6 form-group-glass">
+          <label>Academic Designation</label>
+          <input type="text" name="designation" class="glass-input" required value="{{ f.designation }}">
         </div>
       </div>
 
       <div class="form-group-glass mb-4">
-        <label>Academic Designation</label>
-        <input type="text" name="designation" class="glass-input" required value="{{ f.designation }}">
+        <label>Reset Password (leave blank to keep current)</label>
+        <input type="password" name="password" class="glass-input" placeholder="New password...">
+      </div>
+
+      <div class="form-check mb-4">
+        <input class="form-check-input" type="checkbox" name="is_active" id="activeChk" {% if f.user and f.user.is_active %}checked{% endif %}>
+        <label class="form-check-label text-white small font-mono" for="activeChk">
+          Account Active Status (uncheck to deactivate faculty)
+        </label>
       </div>
 
       <button type="submit" class="btn btn-glass btn-purple btn-magnetic w-100 py-3 font-display fs-6">

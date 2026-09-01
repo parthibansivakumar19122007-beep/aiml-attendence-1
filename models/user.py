@@ -7,11 +7,14 @@ class User(db.Model):
     __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    username = db.Column(db.String(80), unique=True, nullable=False, index=True)
     role = db.Column(db.String(20), nullable=False) # 'STUDENT', 'FACULTY', 'HOD', 'ADMIN'
     name = db.Column(db.String(120), nullable=False)
     email = db.Column(db.String(150), unique=True, nullable=False, index=True)
+    department = db.Column(db.String(120), default='CSE-AIML', nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
+    status = db.Column(db.String(20), default='ACTIVE', nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
@@ -44,14 +47,18 @@ class User(db.Model):
     def to_dict(self):
         return {
             'id': self.id,
+            'username': self.username,
             'role': self.role,
             'name': self.name,
             'email': self.email,
-            'is_active': self.is_active
+            'department': self.department,
+            'status': self.status,
+            'is_active': self.is_active,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else ''
         }
 
     def __repr__(self):
-        return f"<User {self.email} ({self.role})>"
+        return f"<User {self.username} - {self.email} ({self.role})>"
 
 
 class FaceEmbedding(db.Model):

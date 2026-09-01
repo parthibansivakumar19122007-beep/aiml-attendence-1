@@ -11,12 +11,11 @@
     <div>
       <span class="badge-glass badge-purple mb-1">FACULTY ENROLLMENT</span>
       <h4 class="fw-bold font-display text-white mb-0">Register New Faculty Member</h4>
-      <span class="text-white-50 small font-mono">Department of CSE – Artificial Intelligence and Machine Learning</span>
+      <span class="text-white-50 small font-mono">Role: FACULTY • Department Assignment</span>
     </div>
   </div>
 
   <div class="glass-card tilt-card p-4">
-    <div class="tilt-shine"></div>
     <form method="POST" action="{{ url_for('admin.add_faculty') }}" data-validate>
       <div class="row g-3 mb-3">
         <div class="col-12 col-md-6 form-group-glass">
@@ -25,14 +24,25 @@
         </div>
         <div class="col-12 col-md-6 form-group-glass">
           <label>Faculty Staff ID</label>
-          <input type="text" name="faculty_id" class="glass-input" required placeholder="e.g. FAC004">
+          <input type="text" name="faculty_id" id="facIdInput" class="glass-input" required placeholder="e.g. FAC_AIML_010" oninput="syncUsername(this.value)">
         </div>
       </div>
 
       <div class="row g-3 mb-3">
         <div class="col-12 col-md-6 form-group-glass">
+          <label>Login Username</label>
+          <input type="text" name="username" id="usernameInput" class="glass-input" required placeholder="e.g. faculty01">
+        </div>
+        <div class="col-12 col-md-6 form-group-glass">
           <label>Official Email</label>
           <input type="email" name="email" class="glass-input" required placeholder="faculty@example.com">
+        </div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-md-6 form-group-glass">
+          <label>Assigned Department</label>
+          <input type="text" name="department" class="glass-input" value="CSE-AIML" required>
         </div>
         <div class="col-12 col-md-6 form-group-glass">
           <label>Account Password</label>
@@ -46,10 +56,24 @@
       </div>
 
       <button type="submit" class="btn btn-glass btn-purple btn-magnetic w-100 py-3 font-display fs-6">
-        <i class="bi bi-person-check-fill me-1"></i> Register Faculty Member
+        <i class="bi bi-person-check-fill me-1"></i> Register Faculty with Role: FACULTY
       </button>
     </form>
   </div>
 
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function syncUsername(val) {
+  const uInput = document.getElementById('usernameInput');
+  if (!uInput.value || uInput.dataset.manual !== 'true') {
+    uInput.value = val.toLowerCase().replace(/[^a-z0-9]/g, '');
+  }
+}
+document.getElementById('usernameInput').addEventListener('input', function() {
+  this.dataset.manual = 'true';
+});
+</script>
 {% endblock %}

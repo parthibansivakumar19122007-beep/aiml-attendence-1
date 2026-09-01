@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+{% block title %}User Account Management • Admin Console{% endblock %}
+
+{% block content %}
+<div class="glass-panel stagger">
+
+  <!-- Header -->
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div class="d-flex align-items-center gap-3">
+      <a href="{{ url_for('admin.dashboard') }}" class="btn btn-glass rounded-circle p-2" title="Back to Dashboard">
+        <i class="bi bi-arrow-left fs-5"></i>
+      </a>
+      <div>
+        <span class="badge-glass badge-green mb-1">CENTRAL DIRECTORY</span>
+        <h4 class="fw-bold font-display text-white mb-0">System User Accounts &amp; RBAC</h4>
+        <span class="text-white-50 small font-mono">{{ users|length }} User Accounts Registered</span>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('admin.add_student') }}" class="btn btn-glass btn-cyan py-2 px-3 small font-display">
+        <i class="bi bi-person-plus-fill me-1"></i> + Student
+      </a>
+      <a href="{{ url_for('admin.add_faculty') }}" class="btn btn-glass btn-purple py-2 px-3 small font-display">
+        <i class="bi bi-person-badge-fill me-1"></i> + Faculty
+      </a>
+      <a href="{{ url_for('admin.add_hod') }}" class="btn btn-glass btn-amber py-2 px-3 small font-display">
+        <i class="bi bi-person-workspace me-1"></i> + HOD
+      </a>
+    </div>
+  </div>
+
+  <!-- Search & Filter Bar -->
+  <div class="glass-card tilt-card p-3 mb-4">
+    <form method="GET" action="{{ url_for('admin.users_list') }}" class="row g-3 align-items-center">
+      <div class="col-12 col-md-5">
+        <div class="table-search-wrap" style="max-width: 100%;">
+          <i class="bi bi-search search-icon"></i>
+          <input type="text" name="search" class="glass-input table-search-input py-2" placeholder="Search by name, username, or email..." value="{{ search }}">
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <select name="role" class="glass-input py-2">
+          <option value="">-- All Roles --</option>
+          <option value="STUDENT" {% if role_filter == 'STUDENT' %}selected{% endif %}>Student</option>
+          <option value="FACULTY" {% if role_filter == 'FACULTY' %}selected{% endif %}>Faculty</option>
+          <option value="HOD" {% if role_filter == 'HOD' %}selected{% endif %}>HOD</option>
+          <option value="ADMIN" {% if role_filter == 'ADMIN' %}selected{% endif %}>Admin</option>
+        </select>
+      </div>
+      <div class="col-6 col-md-2">
+        <select name="status" class="glass-input py-2">
+          <option value="">-- All Status --</option>
+          <option value="ACTIVE" {% if status_filter == 'ACTIVE' %}selected{% endif %}>Active</option>
+          <option value="INACTIVE" {% if status_filter == 'INACTIVE' %}selected{% endif %}>Inactive</option>
+        </select>
+      </div>
+      <div class="col-12 col-md-2 d-flex gap-2">
+        <button type="submit" class="btn btn-glass btn-green py-2 px-3 flex-fill font-display">Filter</button>
+        <a href="{{ url_for('admin.users_list') }}" class="btn btn-glass py-2 px-3 font-mono">Reset</a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Users Table -->
+  <div class="glass-card tilt-card p-0 overflow-hidden">
+    <div class="table-responsive">
+      <table class="glass-table align-middle mb-0" id="usersMasterTable">
+        <thead>
+          <tr>
+            <th class="ps-4">Username</th>
+            <th>Name</th>
+            <th>Role</th>
+            <th>Email</th>
+            <th>Department</th>
+            <th>Status</th>
+            <th class="text-end pe-4">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          <tr>
+            <td class="ps-4">
+              <span class="badge-glass {% if u.role == 'STUDENT' %}badge-cyan{% elif u.role == 'FACULTY' %}badge-purple{% elif u.role == 'HOD' %}badge-amber{% else %}badge-green{% endif %} font-mono">
+                {{ u.username }}
+              </span>
+            </td>
+            <td class="fw-semibold text-white font-display">
+              <div class="d-flex align-items-center gap-2">
+                <div class="avatar-circle" style="width: 32px; height: 32px; font-size: 0.75rem; background: rgba(255,255,255,0.12); color: #fff; display: flex; align-items: center; justify-content: center; border-radius: 50%;">
+                  {{ u.name[0] if u.name else '?' }}
+                </div>
+                <span>{{ u.name }}</span>
+              </div>
+            </td>
+            <td>
+              {% if u.role == 'STUDENT' %}
+                <span class="badge-glass badge-cyan font-mono">STUDENT</span>
+              {% elif u.role == 'FACULTY' %}
+                <span class="badge-glass badge-purple font-mono">FACULTY</span>
+              {% elif u.role == 'HOD' %}
+                <span class="badge-glass badge-amber font-mono">HOD</span>
+              {% elif u.role == 'ADMIN' %}
+                <span class="badge-glass badge-green font-mono">ADMIN</span>
+              {% endif %}
+            </td>
+            <td class="text-white-50 small font-mono">{{ u.email }}</td>
+            <td class="text-white-50 small font-mono">{{ u.department or 'CSE-AIML' }}</td>
+            <td>
+              {% if u.is_active %}
+                <span class="badge-glass badge-green font-mono">ACTIVE</span>
+              {% else %}
+                <span class="badge-glass badge-red font-mono">INACTIVE</span>
+              {% endif %}
+            </td>
+            <td class="text-end pe-4">
+              <div class="d-flex justify-content-end gap-1">
+                <!-- Reset Password Button -->
+                <button type="button" class="btn btn-glass btn-sm py-1 px-2" title="Reset Password"
+                  onclick="openResetPasswordModal({{ u.id }}, '{{ u.username }}', '{{ u.name }}')">
+                  <i class="bi bi-key text-amber"></i>
+                </button>
+
+                <!-- Toggle Active Button -->
+                {% if u.id != session.get('user_id') %}
+                <form method="POST" action="{{ url_for('admin.toggle_user', user_id=u.id) }}" class="d-inline">
+                  <button type="submit" class="btn btn-glass btn-sm py-1 px-2" title="Toggle Active / Deactivate">
+                    <i class="bi {% if u.is_active %}bi-toggle-on text-green{% else %}bi-toggle-off text-red{% endif %}"></i>
+                  </button>
+                </form>
+                {% endif %}
+
+                <!-- Role-Specific Edit Link -->
+                {% if u.role == 'STUDENT' and u.student_profile %}
+                  <a href="{{ url_for('admin.edit_student', student_id=u.student_profile.id) }}" class="btn btn-glass btn-sm py-1 px-2" title="Edit Student Profile">
+                    <i class="bi bi-pencil-square text-cyan"></i>
+                  </a>
+                {% elif u.role == 'FACULTY' and u.faculty_profile %}
+                  <a href="{{ url_for('admin.edit_faculty', faculty_id=u.faculty_profile.id) }}" class="btn btn-glass btn-sm py-1 px-2" title="Edit Faculty Profile">
+                    <i class="bi bi-pencil-square text-purple"></i>
+                  </a>
+                {% elif u.role == 'HOD' %}
+                  <a href="{{ url_for('admin.edit_hod', hod_id=u.id) }}" class="btn btn-glass btn-sm py-1 px-2" title="Edit HOD Profile">
+                    <i class="bi bi-pencil-square text-amber"></i>
+                  </a>
+                {% endif %}
+
+                <!-- Delete User Button -->
+                {% if u.id != session.get('user_id') %}
+                <form method="POST" action="{{ url_for('admin.delete_user', user_id=u.id) }}" class="d-inline" onsubmit="return confirm('WARNING: Permanently delete account {{ u.username }} ({{ u.name }})? This action cannot be undone.');">
+                  <button type="submit" class="btn btn-glass btn-danger-glass btn-sm py-1 px-2" title="Delete User">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" class="text-center text-white-50 py-5 font-mono">No accounts match the current filter criteria.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- RESET PASSWORD MODAL -->
+<div class="modal fade glass-modal" id="resetPasswordModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-bottom border-white-10 py-3 px-4">
+        <h5 class="modal-title fw-bold font-display text-white mb-0">Reset User Password</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" id="resetPasswordForm" action="">
+        <div class="modal-body p-4">
+          <p class="text-white-50 small font-mono mb-3" id="resetUserLabel">Resetting password...</p>
+          <div class="form-group-glass mb-3 text-start">
+            <label>New Password</label>
+            <input type="password" name="new_password" class="glass-input" required placeholder="Enter new password" minlength="4">
+          </div>
+        </div>
+        <div class="modal-footer border-top border-white-10 p-3 d-flex justify-content-between">
+          <button type="button" class="btn btn-glass px-4" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-glass btn-amber px-4 font-display">Update Password</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function openResetPasswordModal(userId, username, name) {
+  const form = document.getElementById('resetPasswordForm');
+  form.action = '/admin/users/' + userId + '/reset-password';
+  document.getElementById('resetUserLabel').innerHTML = 'Setting new password for: <strong class="text-white">' + username + '</strong> (' + name + ')';
+  const modal = new bootstrap.Modal(document.getElementById('resetPasswordModal'));
+  modal.show();
+}
+</script>
+{% endblock %}

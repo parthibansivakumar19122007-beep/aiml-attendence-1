@@ -91,6 +91,12 @@
             <i class="bi bi-lightning-charge-fill text-green me-2"></i>Quick Administrative Actions
         </h6>
         <div class="d-flex flex-wrap gap-2">
+            <a href="{{ url_for('admin.users_list') }}" class="btn btn-glass btn-green btn-magnetic py-2 px-3 fw-semibold small font-display d-flex align-items-center gap-2">
+                <i class="bi bi-people-fill"></i> Manage All Users
+            </a>
+            <a href="{{ url_for('admin.hod_list') }}" class="btn btn-glass btn-amber btn-magnetic py-2 px-3 fw-semibold small font-display d-flex align-items-center gap-2">
+                <i class="bi bi-person-workspace"></i> Manage HOD
+            </a>
             <a href="{{ url_for('admin.add_student') }}" class="btn btn-glass btn-cyan btn-magnetic py-2 px-3 fw-semibold small font-display d-flex align-items-center gap-2">
                 <i class="bi bi-person-plus-fill"></i> Add Student
             </a>

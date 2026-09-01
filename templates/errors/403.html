@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}403 Forbidden • Access Denied{% endblock %}
+
+{% block content %}
+<div class="glass-panel text-center py-5" style="max-width: 640px; margin: 4rem auto;">
+    <div class="mb-4">
+        <div class="avatar-circle mx-auto mb-3" style="width: 80px; height: 80px; background: rgba(239, 68, 68, 0.18); border: 2px solid var(--red); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 35px var(--red-glow);">
+            <i class="bi bi-shield-x display-4 text-red"></i>
+        </div>
+        <div class="d-flex justify-content-center gap-2 mb-2">
+            <span class="badge-glass badge-red font-mono">HTTP 403 FORBIDDEN</span>
+            <span class="badge-glass badge-red font-mono">Access denied</span>
+        </div>
+        <h2 class="fw-bold font-display text-white mb-2">Restricted Access Area</h2>
+        <p class="text-white-50 font-mono small mb-0">
+            Role-Based Access Control (RBAC) Enforced
+        </p>
+    </div>
+
+    <div class="glass-card p-4 mb-4 text-start">
+        <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom border-white-10">
+            <span class="text-white-50 small font-mono">Authenticated Identity</span>
+            <span class="text-white fw-semibold">{{ current_user.name if current_user else session.get('name', 'Unknown') }}</span>
+        </div>
+        <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom border-white-10">
+            <span class="text-white-50 small font-mono">Assigned Role</span>
+            {% set role = session.get('role', 'GUEST') %}
+            {% if role == 'STUDENT' %}
+                <span class="badge-glass badge-cyan font-mono">STUDENT</span>
+            {% elif role == 'FACULTY' %}
+                <span class="badge-glass badge-purple font-mono">FACULTY</span>
+            {% elif role == 'HOD' %}
+                <span class="badge-glass badge-amber font-mono">HOD</span>
+            {% elif role == 'ADMIN' %}
+                <span class="badge-glass badge-green font-mono">ADMIN</span>
+            {% else %}
+                <span class="badge-glass badge-white font-mono">{{ role }}</span>
+            {% endif %}
+        </div>
+        <div class="d-flex align-items-center justify-content-between">
+            <span class="text-white-50 small font-mono">Requested Path</span>
+            <code class="text-amber small font-mono">{{ request.path }}</code>
+        </div>
+    </div>
+
+    <p class="text-white-50 small mb-4">
+        Your account permissions do not permit access to this module. All security events and unauthorized route attempts are logged to the compliance audit registry.
+    </p>
+
+    <div class="d-flex justify-content-center gap-3 flex-wrap">
+        {% set role = session.get('role') %}
+        {% if role == 'STUDENT' %}
+            <a href="{{ url_for('student.dashboard') }}" class="btn btn-glass btn-cyan px-4 py-2 font-display">
+                <i class="bi bi-arrow-left me-1"></i> Return to Student Portal
+            </a>
+        {% elif role == 'FACULTY' %}
+            <a href="{{ url_for('faculty.dashboard') }}" class="btn btn-glass btn-purple px-4 py-2 font-display">
+                <i class="bi bi-arrow-left me-1"></i> Return to Faculty Portal
+            </a>
+        {% elif role == 'HOD' %}
+            <a href="{{ url_for('hod.dashboard') }}" class="btn btn-glass btn-amber px-4 py-2 font-display">
+                <i class="bi bi-arrow-left me-1"></i> Return to HOD Portal
+            </a>
+        {% elif role == 'ADMIN' %}
+            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-glass btn-green px-4 py-2 font-display">
+                <i class="bi bi-arrow-left me-1"></i> Return to Admin Portal
+            </a>
+        {% else %}
+            <a href="{{ url_for('auth.login_view') }}" class="btn btn-glass px-4 py-2 font-display">
+                <i class="bi bi-box-arrow-in-right me-1"></i> Return to Login
+            </a>
+        {% endif %}
+        <a href="{{ url_for('auth.logout') }}" class="btn btn-glass btn-danger-glass px-4 py-2 font-display">
+            <i class="bi bi-power me-1"></i> Sign Out
+        </a>
+    </div>
+</div>
+{% endblock %}

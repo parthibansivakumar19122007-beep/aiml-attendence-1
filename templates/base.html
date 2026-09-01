@@ -150,19 +150,31 @@
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'admin.dashboard' %}active{% endif %}"
                             href="{{ url_for('admin.dashboard') }}">
-                            <i class="bi bi-shield-fill-check me-1 text-green"></i> Master Control
+                            <i class="bi bi-shield-fill-check me-1 text-green"></i> Dashboard
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'admin.students' %}active{% endif %}"
-                            href="{{ url_for('admin.students') }}">
-                            <i class="bi bi-people-fill me-1 text-cyan"></i> Students
+                        <a class="nav-link {% if request.endpoint == 'admin.users_list' %}active{% endif %}"
+                            href="{{ url_for('admin.users_list') }}">
+                            <i class="bi bi-person-lines-fill me-1 text-green"></i> Users
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint in ['admin.hod_list', 'admin.add_hod', 'admin.edit_hod'] %}active{% endif %}"
+                            href="{{ url_for('admin.hod_list') }}">
+                            <i class="bi bi-person-workspace me-1 text-amber"></i> HOD
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'admin.faculty' %}active{% endif %}"
                             href="{{ url_for('admin.faculty') }}">
                             <i class="bi bi-person-video3 me-1" style="color: var(--purple);"></i> Faculty
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'admin.students' %}active{% endif %}"
+                            href="{{ url_for('admin.students') }}">
+                            <i class="bi bi-people-fill me-1 text-cyan"></i> Students
                         </a>
                     </li>
                     <li class="nav-item">

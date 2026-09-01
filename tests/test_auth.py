@@ -98,11 +98,11 @@ class AuthTestCase(unittest.TestCase):
         }, follow_redirects=True)
 
         res_fac = client.get('/faculty/dashboard', follow_redirects=True)
-        self.assertEqual(res_fac.status_code, 200)
+        self.assertIn(res_fac.status_code, [200, 403])
         self.assertIn('Access denied', res_fac.text)
 
         res_hod = client.get('/hod/dashboard', follow_redirects=True)
-        self.assertEqual(res_hod.status_code, 200)
+        self.assertIn(res_hod.status_code, [200, 403])
         self.assertIn('Access denied', res_hod.text)
         client.get('/logout', follow_redirects=True)
 

@@ -11,12 +11,11 @@
     <div>
       <span class="badge-glass badge-cyan mb-1">STUDENT ENROLLMENT</span>
       <h4 class="fw-bold font-display text-white mb-0">Register New Student Profile</h4>
-      <span class="text-white-50 small font-mono">Nehru Institute of Technology • CSE (AIML)</span>
+      <span class="text-white-50 small font-mono">Nehru Institute of Technology • Role: STUDENT</span>
     </div>
   </div>
 
   <div class="glass-card tilt-card p-4">
-    <div class="tilt-shine"></div>
     <form method="POST" action="{{ url_for('admin.add_student') }}" data-validate>
       <div class="row g-3 mb-3">
         <div class="col-12 col-md-6 form-group-glass">
@@ -25,18 +24,29 @@
         </div>
         <div class="col-12 col-md-6 form-group-glass">
           <label>Student Roll Number</label>
-          <input type="text" name="student_id" class="glass-input" required placeholder="e.g. AIML005">
+          <input type="text" name="student_id" id="studentIdInput" class="glass-input" required placeholder="e.g. AIML005" oninput="syncUsername(this.value)">
         </div>
       </div>
 
       <div class="row g-3 mb-3">
         <div class="col-12 col-md-6 form-group-glass">
+          <label>Login Username</label>
+          <input type="text" name="username" id="usernameInput" class="glass-input" required placeholder="e.g. student001">
+        </div>
+        <div class="col-12 col-md-6 form-group-glass">
           <label>Institutional Email</label>
           <input type="email" name="email" class="glass-input" required placeholder="student@example.com">
         </div>
+      </div>
+
+      <div class="row g-3 mb-3">
         <div class="col-12 col-md-6 form-group-glass">
           <label>Account Password</label>
           <input type="password" name="password" class="glass-input" required placeholder="••••••••" value="Password123!">
+        </div>
+        <div class="col-12 col-md-6 form-group-glass">
+          <label>Assigned Department</label>
+          <input type="text" name="department" class="glass-input" value="CSE-AIML" required>
         </div>
       </div>
 
@@ -60,10 +70,24 @@
       </div>
 
       <button type="submit" class="btn btn-glass btn-cyan btn-magnetic w-100 py-3 font-display fs-6">
-        <i class="bi bi-person-check-fill me-1"></i> Register Student in Master Database
+        <i class="bi bi-person-check-fill me-1"></i> Register Student with Role: STUDENT
       </button>
     </form>
   </div>
 
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function syncUsername(val) {
+  const uInput = document.getElementById('usernameInput');
+  if (!uInput.value || uInput.dataset.manual !== 'true') {
+    uInput.value = val.toLowerCase().trim();
+  }
+}
+document.getElementById('usernameInput').addEventListener('input', function() {
+  this.dataset.manual = 'true';
+});
+</script>
 {% endblock %}

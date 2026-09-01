@@ -39,25 +39,24 @@
                 <i class="bi bi-arrow-left me-1"></i> Return to Dashboard
             </a>
         </div>
-    {% elif open_sessions|length == 0 %}
-        <!-- No Active Open Class Sessions -->
-        <div class="glass-card p-5 text-center mb-4" style="border-color: rgba(251,191,36,0.4); background: rgba(251,191,36,0.06);">
-            <i class="bi bi-clock-history text-amber display-3 d-block mb-3"></i>
-            <h4 class="fw-bold font-display text-white mb-2">No Active Class Attendance Session</h4>
-            <p class="text-white-50 small mb-4">
-                There are currently no open attendance sessions for class section (<strong>{{ student.classroom.class_name if student.classroom else 'I B.E II AIML' }}</strong>).<br>
-                Please wait for the instructor to launch the session from their portal.
-            </p>
-            <div class="d-flex justify-content-center gap-2">
-                <button type="button" class="btn btn-glass btn-cyan px-4 py-2" onclick="location.reload()">
-                    <i class="bi bi-arrow-clockwise me-1"></i> Refresh Status
-                </button>
-                <a href="{{ url_for('student.dashboard') }}" class="btn btn-glass px-4 py-2">
-                    Back to Dashboard
-                </a>
-            </div>
-        </div>
     {% else %}
+
+        <!-- Session Status Alert Banner -->
+        <div id="sessionStatusAlert" class="alert glass-alert {% if open_sessions|length > 0 %}alert-success{% else %}alert-warning{% endif %} mb-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi {% if open_sessions|length > 0 %}bi-broadcast text-green{% else %}bi-clock-history text-amber{% endif %} fs-5" id="alertIcon"></i>
+                <span id="alertMessage">
+                    {% if open_sessions|length > 0 %}
+                        <strong>{{ open_sessions|length }} Class Session(s) Active</strong> — Align your face in the reticle and click [ VERIFY &amp; SUBMIT ATTENDANCE ].
+                    {% else %}
+                        <strong>No Class Session Active Yet</strong> — Instructor has not opened attendance for {{ student.classroom.class_name if student.classroom else 'I B.E II AIML' }}. Camera preview &amp; face HUD is active below. Once instructor starts the session, it connects automatically!
+                    {% endif %}
+                </span>
+            </div>
+            <button type="button" class="btn btn-glass btn-sm font-mono" onclick="manualCheckSessions()">
+                <i class="bi bi-arrow-clockwise me-1"></i> Refresh Sessions
+            </button>
+        </div>
 
         <!-- Active 3D Biometric Face Scanning Interface -->
         <div class="row g-4">
@@ -71,14 +70,18 @@
                     <div class="form-group-glass mb-3">
                         <label class="d-flex justify-content-between">
                             <span>Select Target Attendance Session</span>
-                            <span class="text-cyan font-mono">{{ open_sessions|length }} SESSION(S) OPEN</span>
+                            <span class="text-cyan font-mono" id="sessionCountBadge">{{ open_sessions|length }} SESSION(S) OPEN</span>
                         </label>
                         <select id="sessionSelect" class="glass-input">
-                            {% for sess, tt, sub in open_sessions %}
-                            <option value="{{ sess.id }}" {% if loop.first %}selected{% endif %}>
-                                Hour {{ tt.hour_number }} – {{ sub.short_name }} ({{ sub.subject_name }}) • Faculty: {{ tt.faculty.user.name }}
-                            </option>
-                            {% endfor %}
+                            {% if open_sessions|length > 0 %}
+                                {% for sess, tt, sub in open_sessions %}
+                                <option value="{{ sess.id }}" {% if loop.first %}selected{% endif %}>
+                                    Hour {{ tt.hour_number }} – {{ sub.short_name }} ({{ sub.subject_name }}) • Faculty: {{ tt.faculty.user.name }}
+                                </option>
+                                {% endfor %}
+                            {% else %}
+                                <option value="" selected>-- Waiting for instructor to start class session... --</option>
+                            {% endif %}
                         </select>
                     </div>
 
@@ -232,7 +235,50 @@ document.addEventListener('DOMContentLoaded', () => {
         statusPillEl: document.getElementById('hudStatusPill'),
         hudWrapEl: document.getElementById('faceHudWrap')
     });
+
+    // Automatically initialize camera on page load
+    setTimeout(() => {
+        startCameraSession();
+    }, 400);
+
+    // Poll for instructor-opened sessions every 3 seconds
+    setInterval(pollActiveSessions, 3000);
 });
+
+function manualCheckSessions() {
+    pollActiveSessions();
+    window.Toast.info('Refreshing active classroom sessions...');
+}
+
+function pollActiveSessions() {
+    fetch('{{ url_for("student.api_open_sessions") }}')
+        .then(r => r.json())
+        .then(data => {
+            const selectEl = document.getElementById('sessionSelect');
+            const alertBox = document.getElementById('sessionStatusAlert');
+            const alertMsg = document.getElementById('alertMessage');
+            const alertIcon = document.getElementById('alertIcon');
+            const sessionCountBadge = document.getElementById('sessionCountBadge');
+
+            if (data.sessions && data.sessions.length > 0) {
+                const currentVal = selectEl.value;
+                let optionsHtml = '';
+                data.sessions.forEach((s, idx) => {
+                    const isSel = (currentVal == s.id || (!currentVal && idx === 0)) ? 'selected' : '';
+                    optionsHtml += `<option value="${s.id}" ${isSel}>${s.label}</option>`;
+                });
+                selectEl.innerHTML = optionsHtml;
+                if (sessionCountBadge) sessionCountBadge.innerText = `${data.count} SESSION(S) OPEN`;
+
+                if (alertBox) {
+                    alertBox.className = 'alert glass-alert alert-success mb-4 d-flex align-items-center justify-content-between flex-wrap gap-2';
+                    if (alertIcon) alertIcon.className = 'bi bi-broadcast text-green fs-5';
+                    if (alertMsg) alertMsg.innerHTML = `<strong>${data.count} Class Session(s) Active!</strong> Instructor opened attendance. Align face and click [ VERIFY &amp; MARK PRESENT ].`;
+                }
+            }
+        })
+        .catch(err => console.error('Session poll error:', err));
+}
 
 async function startCameraSession() {
     if (!hudInstance) return;
@@ -260,7 +306,7 @@ async function triggerFaceVerification() {
     const sessionId = sessionSelect ? sessionSelect.value : null;
 
     if (!sessionId) {
-        window.Toast.warning('Please select an active session first.');
+        window.Toast.info('Biometric Camera HUD Active! Please wait for the faculty member to start attendance session to record official attendance.');
         return;
     }
 
@@ -321,8 +367,22 @@ async function triggerFaceVerification() {
             const modal = new bootstrap.Modal(document.getElementById('successModal'));
             modal.show();
         } else {
-            hudInstance.setFailure(data.message || 'Face verification failed');
-            window.Toast.error(data.message || 'Face verification failed.');
+            if (data.status === 'OUTSIDE_GEOFENCE') {
+                hudInstance.setStepState(1, 'done');
+                hudInstance.setStepState(2, 'done');
+                hudInstance.setStepState(3, 'done');
+                hudInstance.setStepState(4, 'done');
+                hudInstance.setStepState(5, 'error');
+                if (data.distance_m !== undefined) {
+                    hudInstance.updateDistance(data.distance_m);
+                }
+                const confPct = data.face_confidence ? (data.face_confidence * 100).toFixed(0) + '%' : 'PASSED';
+                hudInstance.setStatus(`IDENTITY VERIFIED (${confPct}) - OUTSIDE 50M GEOFENCE`, 'amber');
+                window.Toast.warning(`Identity Verified (${confPct}), but ${data.message}`);
+            } else {
+                hudInstance.setFailure(data.message || 'Face verification failed');
+                window.Toast.error(data.message || 'Face verification failed.');
+            }
         }
     } catch(err) {
         hudInstance.setFailure('Network communication error');

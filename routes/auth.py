@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
-from models import db, User, Student, Faculty, AuditLog
-from services.auth_service import login_user_session, logout_user_session
+from models import db, User
+from services.auth_service import login_user_session, logout_user_session, authenticate_user
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -17,17 +17,16 @@ def index():
             return redirect(url_for('hod.dashboard'))
         elif role == 'ADMIN':
             return redirect(url_for('admin.dashboard'))
-    return redirect(url_for('auth.login_view', role='student'))
+    return redirect(url_for('auth.login_view'))
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
-@auth_bp.route('/login/<role_param>', methods=['GET', 'POST'])
-def login_view(role_param=None):
-    """Unified 4-Role Login View (STUDENT, FACULTY, HOD, ADMIN)."""
-    target_role = (role_param or request.args.get('role', 'student')).upper()
-    if target_role not in ['STUDENT', 'FACULTY', 'HOD', 'ADMIN']:
-        target_role = 'STUDENT'
-
-    # If already logged in, redirect to respective dashboard
+def login_view():
+    """
+    Single unified login view for all 4 roles (STUDENT, FACULTY, HOD, ADMIN).
+    Validates username and password, looks up the user, and automatically
+    redirects to the appropriate portal according to their role in the database.
+    """
+    # If already logged in, redirect to respective role dashboard
     if 'user_id' in session:
         current_role = session.get('role')
         if current_role == 'STUDENT':
@@ -40,45 +39,16 @@ def login_view(role_param=None):
             return redirect(url_for('admin.dashboard'))
 
     if request.method == 'POST':
-        login_identifier = (request.form.get('identifier') or request.form.get('email') or '').strip()
+        # Accept username or backward-compatible identifier/email
+        username = (request.form.get('username') or request.form.get('identifier') or request.form.get('email') or '').strip()
         password = request.form.get('password', '').strip()
-        selected_role = request.form.get('role', target_role).upper()
 
-        if not login_identifier or not password:
-            flash('Please provide both identification (Email/ID) and password.', 'danger')
-            return render_template('auth/login.html', active_role=selected_role)
-
-        user = None
-
-        if selected_role == 'STUDENT':
-            # Check by email or student_id
-            if '@' in login_identifier:
-                user = User.query.filter_by(email=login_identifier, role='STUDENT', is_active=True).first()
-            else:
-                student_record = Student.query.filter_by(student_id=login_identifier).first()
-                if student_record and student_record.user and student_record.user.is_active:
-                    user = student_record.user
-
-        elif selected_role == 'FACULTY':
-            # Check by email or faculty_id
-            if '@' in login_identifier:
-                user = User.query.filter_by(email=login_identifier, role='FACULTY', is_active=True).first()
-            else:
-                faculty_record = Faculty.query.filter_by(faculty_id=login_identifier).first()
-                if faculty_record and faculty_record.user and faculty_record.user.is_active:
-                    user = faculty_record.user
-
-        elif selected_role == 'HOD':
-            user = User.query.filter_by(email=login_identifier, role='HOD', is_active=True).first()
-
-        elif selected_role == 'ADMIN':
-            user = User.query.filter_by(email=login_identifier, role='ADMIN', is_active=True).first()
-
-        # Validate password & role
-        if user and user.check_password(password):
+        user, error = authenticate_user(username, password)
+        if user:
             login_user_session(user)
             flash(f'Welcome back, {user.name}!', 'success')
             
+            # Role comes strictly from the database entity
             if user.role == 'STUDENT':
                 return redirect(url_for('student.dashboard'))
             elif user.role == 'FACULTY':
@@ -87,15 +57,18 @@ def login_view(role_param=None):
                 return redirect(url_for('hod.dashboard'))
             elif user.role == 'ADMIN':
                 return redirect(url_for('admin.dashboard'))
+            else:
+                flash('Unknown user role assigned. Please contact the administrator.', 'danger')
+                return redirect(url_for('auth.login_view'))
         else:
-            flash('Invalid credentials or unauthorized role. Please check your details and try again.', 'danger')
-            return render_template('auth/login.html', active_role=selected_role)
+            flash(error or 'Invalid credentials. Please check your username and password.', 'danger')
+            return render_template('auth/login.html', entered_username=username)
 
-    return render_template('auth/login.html', active_role=target_role)
+    return render_template('auth/login.html')
 
 @auth_bp.route('/logout')
 def logout():
-    """Log out the current user."""
+    """Log out the current user and clear session."""
     logout_user_session()
     flash('You have been safely logged out.', 'info')
     return redirect(url_for('auth.login_view'))

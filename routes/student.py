@@ -146,6 +146,45 @@ def scan():
     )
 
 
+@student_bp.route('/api/open-sessions')
+@role_required('STUDENT')
+def api_open_sessions():
+    """Returns JSON list of active open sessions for this student's class."""
+    user = get_current_user()
+    student = Student.query.filter_by(user_id=user.id).first()
+    if not student:
+        return jsonify({'sessions': [], 'count': 0})
+
+    ist_now = get_server_ist_datetime()
+    today_date = ist_now.date()
+
+    open_sessions = (
+        db.session.query(AttendanceSession, Timetable, Subject)
+        .join(Timetable, AttendanceSession.timetable_id == Timetable.id)
+        .join(Subject, Timetable.subject_id == Subject.id)
+        .filter(
+            Timetable.class_id == student.class_id,
+            AttendanceSession.status == 'OPEN',
+            AttendanceSession.date == today_date
+        )
+        .all()
+    )
+
+    result = []
+    for sess, tt, sub in open_sessions:
+        fac_name = tt.faculty.user.name if tt.faculty and tt.faculty.user else 'Faculty'
+        result.append({
+            'id': sess.id,
+            'hour_number': tt.hour_number,
+            'subject_short': sub.short_name,
+            'subject_name': sub.subject_name,
+            'faculty_name': fac_name,
+            'label': f"Hour {tt.hour_number} – {sub.short_name} ({sub.subject_name}) • Faculty: {fac_name}"
+        })
+
+    return jsonify({'sessions': result, 'count': len(result)})
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # FACE VERIFICATION API
 # ─────────────────────────────────────────────────────────────────────────────
@@ -212,6 +251,22 @@ def api_verify_face():
             'message': 'Your face is not enrolled. Please contact your administrator.'
         }), 400
 
+    # ── Face Recognition ──────────────────────────────────────────────────────
+    is_match, confidence, face_error = verify_face_from_b64(frame_b64, face_emb.embedding_data)
+
+    if not is_match:
+        _save_record(att_session.id, student.id, 'REJECTED',
+                     face_error or 'Face mismatch',
+                     float(lat_val) if lat_val not in (None, '') else None,
+                     float(lng_val) if lng_val not in (None, '') else None,
+                     None, confidence)
+        return jsonify({
+            'success': False,
+            'status': 'FACE_MISMATCH',
+            'message': face_error or 'Face verification failed. Your face does not match the enrolled record.',
+            'face_confidence': confidence
+        }), 400
+
     # ── GPS Geofencing (if faculty GPS recorded) ──────────────────────────────
     distance_m = None
     if att_session.faculty_lat and att_session.faculty_lng:
@@ -222,7 +277,8 @@ def api_verify_face():
             return jsonify({
                 'success': False,
                 'status': 'NO_GPS',
-                'message': 'GPS location required. Please allow location access and try again.'
+                'message': 'GPS location required. Please allow location access and try again.',
+                'face_confidence': confidence
             }), 400
 
         distance_m = haversine_distance_meters(
@@ -231,31 +287,16 @@ def api_verify_face():
         )
 
         if distance_m > GEOFENCE_RADIUS_M:
-            # Still log but reject
             _save_record(att_session.id, student.id, 'REJECTED',
                          f'Outside geofence ({distance_m:.0f}m > {GEOFENCE_RADIUS_M}m)',
-                         student_lat, student_lng, distance_m, None)
+                         student_lat, student_lng, distance_m, confidence)
             return jsonify({
                 'success': False,
                 'status': 'OUTSIDE_GEOFENCE',
-                'message': f'You are too far from the classroom ({distance_m:.0f}m). Must be within {GEOFENCE_RADIUS_M}m.'
+                'message': f'You are too far from the classroom ({distance_m:.0f}m). Must be within {GEOFENCE_RADIUS_M}m.',
+                'face_confidence': confidence,
+                'distance_m': distance_m
             }), 400
-
-    # ── Face Recognition ──────────────────────────────────────────────────────
-    is_match, confidence, face_error = verify_face_from_b64(frame_b64, face_emb.embedding_data)
-
-    if not is_match:
-        _save_record(att_session.id, student.id, 'REJECTED',
-                     face_error or 'Face mismatch',
-                     float(lat_val) if lat_val else None,
-                     float(lng_val) if lng_val else None,
-                     distance_m, confidence)
-        return jsonify({
-            'success': False,
-            'status': 'FACE_MISMATCH',
-            'message': face_error or 'Face verification failed.',
-            'face_confidence': confidence
-        }), 400
 
     # ── Mark PRESENT ──────────────────────────────────────────────────────────
     student_lat = float(lat_val) if lat_val not in (None, '') else None

@@ -144,12 +144,17 @@ def session_view(session_id=None):
     elif session_info.get('session'):
         active_session = session_info['session']
 
+    all_slots = Timetable.query.filter_by(faculty_id=faculty.id, is_active=True).order_by(Timetable.hour_number.asc()).all()
+    if not current_slot and all_slots:
+        current_slot = all_slots[0]
+
     return render_template(
         'faculty/session.html',
         faculty=faculty,
         current_slot=current_slot,
         active_session=active_session,
         session_info=session_info,
+        all_slots=all_slots,
         sim_time=sim_time_str,
         sim_day=sim_day_str
     )
@@ -166,6 +171,7 @@ def start_session():
     lng_val = request.form.get('longitude')
     sim_time_str = request.form.get('sim_time')
     sim_day_str = request.form.get('sim_day')
+    timetable_id = request.form.get('timetable_id', type=int)
 
     if not lat_val or not lng_val:
         flash("Unable to capture faculty GPS coordinates. Location is required to start session.", "danger")
@@ -194,7 +200,8 @@ def start_session():
         security_radius_m=50.0,
         target_datetime=eval_datetime,
         target_day=sim_day_str,
-        user_id=user.id
+        user_id=user.id,
+        timetable_id=timetable_id
     )
 
     if session_record:
@@ -202,7 +209,7 @@ def start_session():
         return redirect(url_for('faculty.session_view', session_id=session_record.id, sim_time=sim_time_str, sim_day=sim_day_str))
     else:
         flash(message, 'danger')
-        return redirect(url_for('faculty.dashboard', sim_time=sim_time_str, sim_day=sim_day_str))
+        return redirect(url_for('faculty.session_view', sim_time=sim_time_str, sim_day=sim_day_str))
 
 
 @faculty_bp.route('/session/end/<int:session_id>', methods=['POST'])

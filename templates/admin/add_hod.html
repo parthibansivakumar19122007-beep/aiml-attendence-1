@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block title %}Register HOD • Admin Console{% endblock %}
+
+{% block content %}
+<div class="glass-panel stagger" style="max-width: 680px;">
+
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <a href="{{ url_for('admin.hod_list') }}" class="btn btn-glass rounded-circle p-2" title="Back to HODs">
+      <i class="bi bi-arrow-left fs-5"></i>
+    </a>
+    <div>
+      <span class="badge-glass badge-amber mb-1">HOD REGISTRATION</span>
+      <h4 class="fw-bold font-display text-white mb-0">Register New Head of Department</h4>
+      <span class="text-white-50 small font-mono">Create HOD Account with Database-Enforced Role</span>
+    </div>
+  </div>
+
+  <div class="glass-card tilt-card p-4">
+    <form method="POST" action="{{ url_for('admin.add_hod') }}" data-validate>
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-md-6 form-group-glass">
+          <label>Full Legal Name</label>
+          <input type="text" name="name" class="glass-input" required placeholder="e.g. Dr. S. Ananthi">
+        </div>
+        <div class="col-12 col-md-6 form-group-glass">
+          <label>Unique Username</label>
+          <input type="text" name="username" class="glass-input" required placeholder="e.g. hod01">
+        </div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-md-6 form-group-glass">
+          <label>Official Institutional Email</label>
+          <input type="email" name="email" class="glass-input" required placeholder="hod@example.com">
+        </div>
+        <div class="col-12 col-md-6 form-group-glass">
+          <label>Assigned Department</label>
+          <input type="text" name="department" class="glass-input" value="CSE-AIML" required placeholder="e.g. CSE-AIML">
+        </div>
+      </div>
+
+      <div class="form-group-glass mb-4">
+        <label>Account Password</label>
+        <input type="password" name="password" class="glass-input" required placeholder="••••••••" value="Password123!">
+      </div>
+
+      <button type="submit" class="btn btn-glass btn-amber btn-magnetic w-100 py-3 font-display fs-6">
+        <i class="bi bi-shield-check me-1"></i> Register HOD in System Database
+      </button>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

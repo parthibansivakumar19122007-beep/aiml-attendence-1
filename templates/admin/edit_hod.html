@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}Edit HOD Account • Admin Console{% endblock %}
+
+{% block content %}
+<div class="glass-panel stagger" style="max-width: 680px;">
+
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <a href="{{ url_for('admin.hod_list') }}" class="btn btn-glass rounded-circle p-2" title="Back to HODs">
+      <i class="bi bi-arrow-left fs-5"></i>
+    </a>
+    <div>
+      <span class="badge-glass badge-amber mb-1">HOD PROFILE</span>
+      <h4 class="fw-bold font-display text-white mb-0">Modify HOD Account</h4>
+      <span class="text-white-50 small font-mono">User: {{ hod.username }} • {{ hod.name }}</span>
+    </div>
+  </div>
+
+  <div class="glass-card tilt-card p-4">
+    <form method="POST" action="{{ url_for('admin.edit_hod', hod_id=hod.id) }}" data-validate>
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-md-6 form-group-glass">
+          <label>Full Legal Name</label>
+          <input type="text" name="name" class="glass-input" required value="{{ hod.name }}">
+        </div>
+        <div class="col-12 col-md-6 form-group-glass">
+          <label>Username</label>
+          <input type="text" name="username" class="glass-input" required value="{{ hod.username }}">
+        </div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-md-6 form-group-glass">
+          <label>Official Institutional Email</label>
+          <input type="email" name="email" class="glass-input" required value="{{ hod.email }}">
+        </div>
+        <div class="col-12 col-md-6 form-group-glass">
+          <label>Assigned Department</label>
+          <input type="text" name="department" class="glass-input" value="{{ hod.department or 'CSE-AIML' }}" required>
+        </div>
+      </div>
+
+      <div class="form-group-glass mb-3">
+        <label>Reset Password (leave blank to keep current)</label>
+        <input type="password" name="password" class="glass-input" placeholder="New password...">
+      </div>
+
+      <div class="form-check mb-4">
+        <input class="form-check-input" type="checkbox" name="is_active" id="activeChk" {% if hod.is_active %}checked{% endif %}>
+        <label class="form-check-label text-white small font-mono" for="activeChk">
+          Account Active Status (uncheck to deactivate access)
+        </label>
+      </div>
+
+      <button type="submit" class="btn btn-glass btn-amber btn-magnetic w-100 py-3 font-display fs-6">
+        <i class="bi bi-check2-circle me-1"></i> Save Changes to HOD Profile
+      </button>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

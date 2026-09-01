@@ -11,12 +11,11 @@
     <div>
       <span class="badge-glass badge-cyan mb-1">STUDENT PROFILE</span>
       <h4 class="fw-bold font-display text-white mb-0">Modify Student Profile</h4>
-      <span class="text-white-50 small font-mono">Roll: {{ st.student_id }} • {{ st.user.name }}</span>
+      <span class="text-white-50 small font-mono">Username: {{ st.user.username }} • Roll: {{ st.student_id }}</span>
     </div>
   </div>
 
   <div class="glass-card tilt-card p-4">
-    <div class="tilt-shine"></div>
     <form method="POST" action="{{ url_for('admin.edit_student', student_id=st.id) }}" data-validate>
       <div class="row g-3 mb-3">
         <div class="col-12 col-md-6 form-group-glass">
@@ -24,8 +23,8 @@
           <input type="text" name="name" class="glass-input" required value="{{ st.user.name if st.user else '' }}">
         </div>
         <div class="col-12 col-md-6 form-group-glass">
-          <label>Student Roll Number</label>
-          <input type="text" name="student_id" class="glass-input" required value="{{ st.student_id }}">
+          <label>Login Username</label>
+          <input type="text" name="username" class="glass-input" required value="{{ st.user.username if st.user else '' }}">
         </div>
       </div>
 
@@ -35,7 +34,18 @@
           <input type="email" name="email" class="glass-input" required value="{{ st.user.email if st.user else '' }}">
         </div>
         <div class="col-12 col-md-6 form-group-glass">
-          <label>Update Password (leave blank to keep current)</label>
+          <label>Assigned Department</label>
+          <input type="text" name="department" class="glass-input" value="{{ st.user.department if st.user else 'CSE-AIML' }}" required>
+        </div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-md-6 form-group-glass">
+          <label>Student Roll Number</label>
+          <input type="text" name="student_id" class="glass-input" readonly value="{{ st.student_id }}">
+        </div>
+        <div class="col-12 col-md-6 form-group-glass">
+          <label>Reset Password (leave blank to keep current)</label>
           <input type="password" name="password" class="glass-input" placeholder="New password...">
         </div>
       </div>
@@ -59,8 +69,15 @@
         </div>
       </div>
 
+      <div class="form-check mb-4">
+        <input class="form-check-input" type="checkbox" name="is_active" id="activeChk" {% if st.user and st.user.is_active %}checked{% endif %}>
+        <label class="form-check-label text-white small font-mono" for="activeChk">
+          Account Active Status (uncheck to deactivate student)
+        </label>
+      </div>
+
       <button type="submit" class="btn btn-glass btn-cyan btn-magnetic w-100 py-3 font-display fs-6">
-        <i class="bi bi-check2-circle me-1"></i> Save Changes to Profile
+        <i class="bi bi-check2-circle me-1"></i> Save Changes to Student Profile
       </button>
     </form>
   </div>

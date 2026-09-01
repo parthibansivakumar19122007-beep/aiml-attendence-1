@@ -88,37 +88,45 @@ def initialize_database():
 
         print("Seeding Admin User...")
         admin_user = User(
+            username='admin01',
             role='ADMIN',
             name='System Administrator',
-            email='admin@example.com'
+            email='admin@example.com',
+            department='CSE-AIML',
+            status='ACTIVE',
+            is_active=True
         )
         admin_user.set_password('Password123!')
         db.session.add(admin_user)
 
         print("Seeding HOD User...")
         hod_user = User(
+            username='hod01',
             role='HOD',
             name='Dr. S. Ananthi',
-            email='hod@example.com'
+            email='hod@example.com',
+            department='CSE-AIML',
+            status='ACTIVE',
+            is_active=True
         )
         hod_user.set_password('Password123!')
         db.session.add(hod_user)
 
         print("Seeding 9 Faculty Members...")
         faculty_data = [
-            ('Dr. A. Shobana', 'shobana@example.com', 'FAC_AIML_001', 'Associate Professor', 'uploads/faculty/shobana.jpg'),
-            ('Mr. M. Eshwar Vadivel', 'eswar@example.com', 'FAC_AIML_002', 'Assistant Professor', 'uploads/faculty/eshwar.jpg'),
-            ('Mr. V. Nagaraj', 'nagaraj@example.com', 'FAC_AIML_003', 'Assistant Professor', 'uploads/faculty/nagaraj.jpg'),
-            ('Mrs. M. Nansiyaz Banu', 'nansiyaz@example.com', 'FAC_AIML_004', 'Assistant Professor', 'uploads/faculty/nansiyaz.jpg'),
-            ('Dr. S. Jyothi Lakshmi', 'jyothi@example.com', 'FAC_AIML_005', 'Associate Professor', 'uploads/faculty/jyothi.jpg'),
-            ('Mr. S. Udhayakumar', 'udhayakumar@example.com', 'FAC_AIML_006', 'Assistant Professor', 'uploads/faculty/udhayakumar.jpg'),
-            ('Mrs. P. Gokilamani', 'gokilamani@example.com', 'FAC_AIML_007', 'Assistant Professor', 'uploads/faculty/gokilamani.jpg'),
-            ('Dr. M. Bhuvaneswari', 'bhuvaneswari@example.com', 'FAC_AIML_008', 'Professor', 'uploads/faculty/bhuvaneswari.jpg'),
-            ('Mr. V. Nagaraju', 'nagaraju@example.com', 'FAC_AIML_009', 'Assistant Professor', 'uploads/faculty/nagaraju.jpg'),
+            ('faculty01', 'Dr. A. Shobana', 'shobana@example.com', 'FAC_AIML_001', 'Associate Professor', 'uploads/faculty/shobana.jpg'),
+            ('faculty02', 'Mr. M. Eshwar Vadivel', 'eswar@example.com', 'FAC_AIML_002', 'Assistant Professor', 'uploads/faculty/eshwar.jpg'),
+            ('faculty03', 'Mr. V. Nagaraj', 'nagaraj@example.com', 'FAC_AIML_003', 'Assistant Professor', 'uploads/faculty/nagaraj.jpg'),
+            ('faculty04', 'Mrs. M. Nansiyaz Banu', 'nansiyaz@example.com', 'FAC_AIML_004', 'Assistant Professor', 'uploads/faculty/nansiyaz.jpg'),
+            ('faculty05', 'Dr. S. Jyothi Lakshmi', 'jyothi@example.com', 'FAC_AIML_005', 'Associate Professor', 'uploads/faculty/jyothi.jpg'),
+            ('faculty06', 'Mr. S. Udhayakumar', 'udhayakumar@example.com', 'FAC_AIML_006', 'Assistant Professor', 'uploads/faculty/udhayakumar.jpg'),
+            ('faculty07', 'Mrs. P. Gokilamani', 'gokilamani@example.com', 'FAC_AIML_007', 'Assistant Professor', 'uploads/faculty/gokilamani.jpg'),
+            ('faculty08', 'Dr. M. Bhuvaneswari', 'bhuvaneswari@example.com', 'FAC_AIML_008', 'Professor', 'uploads/faculty/bhuvaneswari.jpg'),
+            ('faculty09', 'Mr. V. Nagaraju', 'nagaraju@example.com', 'FAC_AIML_009', 'Assistant Professor', 'uploads/faculty/nagaraju.jpg'),
         ]
         fac_dict = {}
-        for name, email, fac_id, desig, photo in faculty_data:
-            u = User(role='FACULTY', name=name, email=email)
+        for uname, name, email, fac_id, desig, photo in faculty_data:
+            u = User(username=uname, role='FACULTY', name=name, email=email, department='CSE-AIML', status='ACTIVE', is_active=True)
             u.set_password('Password123!')
             db.session.add(u)
             db.session.flush()
@@ -130,15 +138,15 @@ def initialize_database():
 
         print("Seeding 5 Students & Face Embeddings...")
         students_data = [
-            ('Parthiban', 'student@example.com', 'AIML001', 'uploads/students/AIML001.jpg'),
-            ('Aarav Sharma', 'aarav@example.com', 'AIML002', 'uploads/students/AIML002.jpg'),
-            ('Kavya Nair', 'kavya@example.com', 'AIML003', 'uploads/students/AIML003.jpg'),
-            ('Rahul Verma', 'rahul@example.com', 'AIML004', 'uploads/students/AIML004.jpg'),
-            ('Priya Dharshini', 'priya@example.com', 'AIML005', 'uploads/students/AIML005.jpg'),
+            ('student01', 'Parthiban', 'student@example.com', 'AIML001', 'uploads/students/AIML001.jpg'),
+            ('student02', 'Aarav Sharma', 'aarav@example.com', 'AIML002', 'uploads/students/AIML002.jpg'),
+            ('student03', 'Kavya Nair', 'kavya@example.com', 'AIML003', 'uploads/students/AIML003.jpg'),
+            ('student04', 'Rahul Verma', 'rahul@example.com', 'AIML004', 'uploads/students/AIML004.jpg'),
+            ('student05', 'Priya Dharshini', 'priya@example.com', 'AIML005', 'uploads/students/AIML005.jpg'),
         ]
         dummy_vector = [0.05 * (i % 10) - 0.02 for i in range(128)]
-        for name, email, roll, photo in students_data:
-            u = User(role='STUDENT', name=name, email=email)
+        for uname, name, email, roll, photo in students_data:
+            u = User(username=uname, role='STUDENT', name=name, email=email, department='CSE-AIML', status='ACTIVE', is_active=True)
             u.set_password('Password123!')
             db.session.add(u)
             db.session.flush()

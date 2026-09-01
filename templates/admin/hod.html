@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% block title %}HOD Management • Admin Console{% endblock %}
+
+{% block content %}
+<div class="glass-panel stagger">
+
+  <!-- Header -->
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div class="d-flex align-items-center gap-3">
+      <a href="{{ url_for('admin.dashboard') }}" class="btn btn-glass rounded-circle p-2" title="Back to Dashboard">
+        <i class="bi bi-arrow-left fs-5"></i>
+      </a>
+      <div>
+        <span class="badge-glass badge-amber mb-1">HEAD OF DEPARTMENT</span>
+        <h4 class="fw-bold font-display text-white mb-0">HOD Executive Accounts</h4>
+        <span class="text-white-50 small font-mono">{{ hods|length }} Department Heads Registered</span>
+      </div>
+    </div>
+    <a href="{{ url_for('admin.add_hod') }}" class="btn btn-glass btn-amber btn-magnetic px-4 py-2 font-display d-flex align-items-center gap-2">
+      <i class="bi bi-person-plus-fill"></i> Add New HOD
+    </a>
+  </div>
+
+  <!-- HOD Table -->
+  <div class="glass-card tilt-card p-0 overflow-hidden">
+    <div class="table-responsive">
+      <table class="glass-table align-middle mb-0" id="hodMasterTable">
+        <thead>
+          <tr>
+            <th class="ps-4">Username</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Department</th>
+            <th>Status</th>
+            <th class="text-end pe-4">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for h in hods %}
+          <tr>
+            <td class="ps-4">
+              <span class="badge-glass badge-amber font-mono">
+                {{ h.username }}
+              </span>
+            </td>
+            <td class="fw-semibold text-white font-display">
+              <div class="d-flex align-items-center gap-2">
+                <div class="avatar-circle" style="width: 32px; height: 32px; font-size: 0.75rem; background: rgba(251,191,36,0.2); color: var(--amber); display: flex; align-items: center; justify-content: center; border-radius: 50%;">
+                  {{ h.name[0] if h.name else '?' }}
+                </div>
+                <span>{{ h.name }}</span>
+              </div>
+            </td>
+            <td class="text-white-50 small font-mono">{{ h.email }}</td>
+            <td class="text-white-50 small font-mono">{{ h.department or 'CSE-AIML' }}</td>
+            <td>
+              {% if h.is_active %}
+                <span class="badge-glass badge-green font-mono">ACTIVE</span>
+              {% else %}
+                <span class="badge-glass badge-red font-mono">INACTIVE</span>
+              {% endif %}
+            </td>
+            <td class="text-end pe-4">
+              <div class="d-flex justify-content-end gap-1">
+                <a href="{{ url_for('admin.edit_hod', hod_id=h.id) }}" class="btn btn-glass btn-sm py-1 px-2" title="Edit HOD">
+                  <i class="bi bi-pencil-square text-amber"></i>
+                </a>
+                <form method="POST" action="{{ url_for('admin.toggle_hod', hod_id=h.id) }}" class="d-inline">
+                  <button type="submit" class="btn btn-glass btn-sm py-1 px-2" title="Toggle Active / Deactivate">
+                    <i class="bi {% if h.is_active %}bi-toggle-on text-green{% else %}bi-toggle-off text-red{% endif %}"></i>
+                  </button>
+                </form>
+                <form method="POST" action="{{ url_for('admin.delete_hod', hod_id=h.id) }}" class="d-inline" onsubmit="return confirm('WARNING: Permanently delete HOD account {{ h.username }} ({{ h.name }})?');">
+                  <button type="submit" class="btn btn-glass btn-danger-glass btn-sm py-1 px-2" title="Delete HOD">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="6" class="text-center text-white-50 py-5 font-mono">No HOD accounts registered. Click <strong>Add New HOD</strong> above.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,13 +1,13 @@
 {% extends 'base.html' %}
 
-{% block title %}Sign In • Spatial AI Attendance System{% endblock %}
+{% block title %}Sign In • AIML Smart Attendance Portal{% endblock %}
 
 {% block content %}
 <!-- ============================================================
-     3D CINEMATIC STARTUP SEQUENCE OVERLAY
+     CINEMATIC STARTUP SEQUENCE OVERLAY
      ============================================================ -->
 <div id="startupSequence">
-    <!-- Ambient 3D Glow Orb -->
+    <!-- Ambient Glow Orb -->
     <div class="startup-glow-orb"></div>
 
     <!-- Skip Intro Quick Button -->
@@ -15,7 +15,7 @@
         <span>Skip Intro</span> <i class="bi bi-chevron-right"></i>
     </button>
 
-    <!-- Stage 1 & 2: 3D WELCOME with Center Split -->
+    <!-- Stage 1 & 2: WELCOME with Center Split -->
     <div class="welcome-3d-wrap" id="welcomeWrap">
         <div class="welcome-half welcome-left" id="welcomeLeft">
             <span class="depth-text">WEL</span>
@@ -30,7 +30,7 @@
         <img src="{{ url_for('static', filename='images/nit-logo.png') }}" alt="NIT Logo" class="startup-logo">
         <h2 class="startup-college-name">NEHRU INSTITUTE OF TECHNOLOGY</h2>
         <h1 class="startup-main-title">AIML ATTENDANCE SYSTEM</h1>
-        <p class="startup-subtitle">Build by AIML Department</p>
+        <p class="startup-subtitle">Department of CSE – Artificial Intelligence & Machine Learning</p>
     </div>
 
     <!-- Stage 5: Existing Campus Image Showcase -->
@@ -43,9 +43,8 @@
 
 <div class="login-wrapper">
     <div class="glass-command tilt-card login-panel p-4 p-md-5">
-        <div class="tilt-shine"></div>
 
-        <!-- Animated Logo & Department Branding -->
+        <!-- Logo & Department Branding -->
         <div class="login-logo-wrap text-center mb-4">
             <div class="position-relative d-inline-block mb-3">
                 <img src="{{ url_for('static', filename='images/nit-logo.png') }}" alt="NIT Logo"
@@ -57,45 +56,25 @@
                 <span class="badge-glass badge-cyan">AUTONOMOUS</span>
                 <span class="badge-glass badge-purple">CSE (AIML)</span>
             </div>
-            <div class="small text-white-50 font-mono" style="font-size: 0.76rem;">Spatial AI Smart Campus • Biometric Core</div>
+            <div class="small text-white-50 font-mono" style="font-size: 0.76rem;">Unified Smart Attendance Authentication Gateway</div>
         </div>
 
-        <!-- 4-Role Navigation Switcher -->
-        <div class="role-selector mb-4">
-            {% set roles = [
-                ('STUDENT', 'Student', 'bi-person-fill', '#22d3ee', 'AIML001', 'Password123!'),
-                ('FACULTY', 'Faculty', 'bi-person-video3', '#a78bfa', 'eswar@example.com', 'Password123!') ,
-                ('HOD', 'HOD', 'bi-person-workspace', '#fbbf24', 'hod@example.com', 'Password123!'),
-                ('ADMIN', 'Admin', 'bi-shield-lock-fill', '#34d399', 'admin@example.com', 'Password123!')
-            ] %}
-
-            {% for r_code, r_label, r_icon, r_color, r_id, r_pass in roles %}
-            <button type="button" 
-                class="role-btn {% if active_role == r_code %}active{% endif %}"
-                onclick="switchRole('{{ r_code }}', '{{ r_id }}', '{{ r_pass }}', this, '{{ r_color }}')">
-                <i class="bi {{ r_icon }} role-icon" style="color: {{ r_color }};"></i>
-                <span>{{ r_label }}</span>
-            </button>
-            {% endfor %}
-        </div>
-
-        <!-- Sign-In Form -->
+        <!-- Unified Single Login Form -->
         <form method="POST" action="{{ url_for('auth.login_view') }}" id="loginForm" data-validate>
-            <input type="hidden" name="role" id="roleInput" value="{{ active_role }}">
 
-            <!-- Identifier Input -->
+            <!-- Username Input -->
             <div class="form-group-glass mb-3">
-                <label id="idLabel">Student Roll No / Email</label>
+                <label>Username</label>
                 <div class="position-relative">
-                    <input type="text" name="identifier" id="identifierInput" class="glass-input"
-                        placeholder="e.g. AIML001 or email" required autofocus
-                        value="{% if active_role == 'STUDENT' %}AIML001{% elif active_role == 'FACULTY' %}eswar@example.com{% elif active_role == 'HOD' %}hod@example.com{% elif active_role == 'ADMIN' %}admin@example.com{% endif %}">
+                    <input type="text" name="username" id="usernameInput" class="glass-input"
+                        placeholder="e.g. student01, faculty01, hod01, admin01" required autofocus
+                        value="{{ entered_username or '' }}">
                 </div>
             </div>
 
             <!-- Password Input -->
             <div class="form-group-glass mb-4">
-                <label>Access Credential (Password)</label>
+                <label>Password</label>
                 <div class="position-relative">
                     <input type="password" name="password" id="passwordInput" class="glass-input pe-5"
                         placeholder="••••••••" required value="Password123!">
@@ -108,35 +87,35 @@
             <!-- Submit Button -->
             <button type="submit" id="btnSubmitLogin" class="btn btn-glass btn-cyan btn-magnetic w-100 py-3 font-display fs-6 mb-3">
                 <i class="bi bi-box-arrow-in-right fs-5"></i>
-                <span id="btnText">Authenticate &amp; Launch Portal</span>
+                <span id="btnText">Sign In to Attendance Portal</span>
             </button>
         </form>
 
-        <!-- Quick Demo Switcher -->
-        <div class="p-3 rounded-4 mt-2" style="background: rgba(0, 0, 0, 0.15); border: 1px solid rgba(255, 255, 255, 0.18); backdrop-filter: blur(3px);">
+        <!-- Quick 1-Click Demo Credentials -->
+        <div class="p-3 rounded-4 mt-2" style="background: rgba(0, 0, 0, 0.15); border: 1px solid rgba(255, 255, 255, 0.18); backdrop-filter: blur(4px);">
             <div class="small text-white text-center mb-2 font-mono" style="font-size: 0.72rem; letter-spacing: 0.06em; text-shadow: 0 1px 4px rgba(0,0,0,0.8);">
                 ⚡ ONE-CLICK DEMO AUTHENTICATION
             </div>
             <div class="d-grid gap-2" style="grid-template-columns: 1fr 1fr; display: grid;">
                 <button type="button" class="btn btn-glass py-1 px-2 text-start small d-flex align-items-center justify-content-between"
-                    onclick="quickLogin('STUDENT', 'AIML001', 'Password123!')">
+                    onclick="setCredentials('student01', 'Password123!')">
                     <span class="badge-glass badge-cyan">Student</span>
-                    <span class="text-white-50 font-mono" style="font-size: 0.72rem;">AIML001</span>
+                    <span class="text-white-50 font-mono" style="font-size: 0.72rem;">student01</span>
                 </button>
                 <button type="button" class="btn btn-glass py-1 px-2 text-start small d-flex align-items-center justify-content-between"
-                    onclick="quickLogin('FACULTY', 'eswar@example.com', 'Password123!')">
+                    onclick="setCredentials('faculty01', 'Password123!')">
                     <span class="badge-glass badge-purple">Faculty</span>
-                    <span class="text-white-50 font-mono" style="font-size: 0.72rem;">Eshwar</span>
+                    <span class="text-white-50 font-mono" style="font-size: 0.72rem;">faculty01</span>
                 </button>
                 <button type="button" class="btn btn-glass py-1 px-2 text-start small d-flex align-items-center justify-content-between"
-                    onclick="quickLogin('HOD', 'hod@example.com', 'Password123!')">
+                    onclick="setCredentials('hod01', 'Password123!')">
                     <span class="badge-glass badge-amber">HOD</span>
-                    <span class="text-white-50 font-mono" style="font-size: 0.72rem;">Dr. HOD</span>
+                    <span class="text-white-50 font-mono" style="font-size: 0.72rem;">hod01</span>
                 </button>
                 <button type="button" class="btn btn-glass py-1 px-2 text-start small d-flex align-items-center justify-content-between"
-                    onclick="quickLogin('ADMIN', 'admin@example.com', 'Password123!')">
+                    onclick="setCredentials('admin01', 'Password123!')">
                     <span class="badge-glass badge-green">Admin</span>
-                    <span class="text-white-50 font-mono" style="font-size: 0.72rem;">Master</span>
+                    <span class="text-white-50 font-mono" style="font-size: 0.72rem;">admin01</span>
                 </button>
             </div>
         </div>
@@ -148,7 +127,7 @@
 {% block extra_scripts %}
 <script>
 // ============================================================
-// 3D CINEMATIC STARTUP TIMING ORCHESTRATION
+// STARTUP SEQUENCE TIMING ORCHESTRATION
 // ============================================================
 let startupTimers = [];
 
@@ -177,22 +156,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!overlay) return;
 
-    // 0.3s: 3D WELCOME emerges from center scaling forward
+    // 0.3s: WELCOME emerges
     startupTimers.push(setTimeout(() => {
         if (welcomeWrap) welcomeWrap.classList.add('emerged');
     }, 300));
 
-    // 1.5s: WELCOME splits from exact center into LEFT & RIGHT
+    // 1.5s: WELCOME splits
     startupTimers.push(setTimeout(() => {
         if (welcomeWrap) welcomeWrap.classList.add('split-active');
     }, 1500));
 
-    // 2.3s: College Logo + Name + AIML System reveal in center
+    // 2.3s: College Logo + Title reveal
     startupTimers.push(setTimeout(() => {
         if (collegeCenter) collegeCenter.classList.add('visible');
     }, 2300));
 
-    // 3.5s: Transition to existing campus image
+    // 3.5s: Campus image showcase
     startupTimers.push(setTimeout(() => {
         if (campusStage) campusStage.style.opacity = '1';
         setTimeout(() => {
@@ -200,33 +179,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 250);
     }, 3500));
 
-    // 5.5s: Smooth transition to transparent login page
+    // 5.5s: Smooth transition to login form
     startupTimers.push(setTimeout(() => {
         endStartupSequence();
     }, 5500));
 });
 
-function switchRole(role, defaultId, defaultPass, btn, color) {
-    document.getElementById('roleInput').value = role;
-    document.getElementById('identifierInput').value = defaultId;
-    document.getElementById('passwordInput').value = defaultPass;
-
-    const labelMap = {
-        'STUDENT': 'Student Roll No / Registered Email',
-        'FACULTY': 'Faculty ID / Official Email',
-        'HOD': 'HOD Department Email Address',
-        'ADMIN': 'System Administrator Email'
-    };
-    document.getElementById('idLabel').innerText = labelMap[role];
-
-    document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-}
-
-function quickLogin(role, id, pass) {
-    document.getElementById('roleInput').value = role;
-    document.getElementById('identifierInput').value = id;
-    document.getElementById('passwordInput').value = pass;
+function setCredentials(username, password) {
+    document.getElementById('usernameInput').value = username;
+    document.getElementById('passwordInput').value = password;
     document.getElementById('loginForm').submit();
 }
 
@@ -245,7 +206,7 @@ function togglePassVisibility() {
 document.getElementById('loginForm').addEventListener('submit', function() {
     const btn = document.getElementById('btnSubmitLogin');
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Authenticating Neural Vector...';
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Authenticating...';
 });
 </script>
 {% endblock %}

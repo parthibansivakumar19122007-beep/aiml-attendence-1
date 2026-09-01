@@ -40,22 +40,29 @@ def start_faculty_session(
     security_radius_m: float = 50.0,
     target_datetime: Optional[datetime] = None,
     target_day: Optional[str] = None,
-    user_id: Optional[int] = None
+    user_id: Optional[int] = None,
+    timetable_id: Optional[int] = None
 ) -> Tuple[Optional[AttendanceSession], str]:
     """Starts an attendance session for the faculty member's currently scheduled class."""
     if latitude is None or longitude is None:
         return None, "GPS coordinates are mandatory to establish the geofence reference center."
 
-    session_info = get_current_timetable_session(
-        faculty_id=faculty_id,
-        target_datetime=target_datetime,
-        target_day=target_day
-    )
+    slot = None
+    if timetable_id:
+        slot = Timetable.query.filter_by(id=timetable_id, is_active=True).first()
+    else:
+        session_info = get_current_timetable_session(
+            faculty_id=faculty_id,
+            target_datetime=target_datetime,
+            target_day=target_day
+        )
+        if not session_info.get('is_scheduled') or not session_info.get('slot'):
+            return None, session_info.get('message', "You are not scheduled to handle a class at this time.")
+        slot = session_info['slot']
 
-    if not session_info.get('is_scheduled') or not session_info.get('slot'):
-        return None, session_info.get('message', "You are not scheduled to handle a class at this time.")
+    if not slot:
+        return None, "No active timetable slot found."
 
-    slot = session_info['slot']
     ist_now = target_datetime or get_server_ist_datetime()
     current_date = ist_now.date()
 
@@ -68,7 +75,14 @@ def start_faculty_session(
         if existing_session.status == 'OPEN':
             return existing_session, "Attendance session is already open and active."
         elif existing_session.status in ['CLOSED', 'EXPIRED']:
-            return None, "Attendance session for this scheduled hour has already been conducted and closed today."
+            # Reopen the session so faculty can re-conduct or resume attendance
+            existing_session.status = 'OPEN'
+            existing_session.faculty_lat = latitude
+            existing_session.faculty_lng = longitude
+            existing_session.opened_at = ist_now
+            db.session.commit()
+            sub_name = slot.subject.short_name if slot.subject else 'Class'
+            return existing_session, f"Attendance session for {sub_name} (Hour {slot.hour_number}) reopened and active."
 
     try:
         session_record = AttendanceSession(
