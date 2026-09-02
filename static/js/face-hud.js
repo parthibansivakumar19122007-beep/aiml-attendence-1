@@ -93,15 +93,31 @@ class FaceVisionHUD {
         throw new Error('Camera API not supported or blocked by browser.');
       }
       
-      const constraints = {
-        video: {
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          facingMode: 'user'
+      let stream = null;
+      try {
+        // Try optimal front/user camera first
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' }
+        });
+      } catch (e1) {
+        console.warn('Optimal camera constraint failed, trying basic resolution...', e1);
+        try {
+          // Fallback without facingMode (essential for Windows laptop webcams)
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { width: { ideal: 1280 }, height: { ideal: 720 } }
+          });
+        } catch (e2) {
+          console.warn('Resolution constraint failed, trying simple video:true...', e2);
+          try {
+            // Absolute minimal fallback
+            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          } catch (e3) {
+            throw e3;
+          }
         }
-      };
+      }
       
-      this.stream = await navigator.mediaDevices.getUserMedia(constraints);
+      this.stream = stream;
       if (this.videoEl) {
         this.videoEl.srcObject = this.stream;
         await this.videoEl.play();
@@ -125,8 +141,14 @@ class FaceVisionHUD {
       if (window.Toast) {
         if (!window.isSecureContext && window.location.protocol === 'http:') {
           window.Toast.error('Mobile camera requires HTTPS. Please access via https://' + window.location.host);
+        } else if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          window.Toast.error('Camera permission blocked. Click the lock/camera icon in your address bar and select "Allow".');
+        } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+          window.Toast.error('Camera is being used by another app. Please close other camera programs.');
+        } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+          window.Toast.error('No camera detected. Please plug in or enable a webcam.');
         } else {
-          window.Toast.error('Camera access was denied or is unavailable. Please check browser permissions.');
+          window.Toast.error('Camera access failed: ' + (err.message || 'Please check browser permissions.'));
         }
       }
       return false;
