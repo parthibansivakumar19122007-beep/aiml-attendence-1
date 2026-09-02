@@ -32,7 +32,7 @@ if BACKEND is None:
         pass
 
 # ── CONFIG ────────────────────────────────────────────────────────────────────
-RECOGNITION_TOLERANCE = 0.55       # Max cosine distance (lower = stricter)
+RECOGNITION_TOLERANCE = 0.65       # Max cosine distance (lower = stricter)
 MIN_FACE_SIZE = 50                  # Minimum face width/height in pixels
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024  # 5 MB
@@ -147,19 +147,29 @@ def _extract_face_embedding_cv(img_pil: Image.Image) -> Tuple[Optional[np.ndarra
     x2 = min(rgb.shape[1], x + w + margin)
     y2 = min(rgb.shape[0], y + h + margin)
 
-    face_roi_rgb = rgb[y1:y2, x1:x2]
     face_roi_gray = gray[y1:y2, x1:x2]
 
     # Resize to fixed 64x64
     face_resized = cv2.resize(face_roi_gray, (64, 64))
 
-    # Build 128-dim descriptor: 4x4 grid of 8-bin histograms
+    # Illumination-invariant contrast normalization via CLAHE
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    face_norm = clahe.apply(face_resized)
+
+    # Gradient orientation features (invariant to lighting/shadows)
+    gx = cv2.Sobel(face_norm, cv2.CV_32F, 1, 0, ksize=3)
+    gy = cv2.Sobel(face_norm, cv2.CV_32F, 0, 1, ksize=3)
+    mag = np.sqrt(gx**2 + gy**2)
+    ang = np.arctan2(gy, gx) * (180 / np.pi) % 180
+
+    # Build 128-dim descriptor: 4x4 spatial grid of 8 orientation bins weighted by magnitude
     embedding = []
     cell_size = 16
     for row in range(4):
         for col in range(4):
-            cell = face_resized[row*cell_size:(row+1)*cell_size, col*cell_size:(col+1)*cell_size]
-            hist, _ = np.histogram(cell.flatten(), bins=8, range=(0, 255))
+            cell_ang = ang[row*cell_size:(row+1)*cell_size, col*cell_size:(col+1)*cell_size]
+            cell_mag = mag[row*cell_size:(row+1)*cell_size, col*cell_size:(col+1)*cell_size]
+            hist, _ = np.histogram(cell_ang, bins=8, range=(0, 180), weights=cell_mag)
             embedding.extend(hist.tolist())
 
     embedding_arr = _normalize(np.array(embedding, dtype=np.float32))
