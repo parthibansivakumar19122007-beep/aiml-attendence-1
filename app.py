@@ -54,4 +54,8 @@ app = create_app()
 if __name__ == '__main__':
     # Local development server
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    ssl_context = None
+    if os.path.exists('cert.pem') and os.path.exists('key.pem'):
+        ssl_context = ('cert.pem', 'key.pem')
+    app.run(host='0.0.0.0', port=port, debug=True, ssl_context=ssl_context)
+

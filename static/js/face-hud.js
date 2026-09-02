@@ -78,6 +78,20 @@ class FaceVisionHUD {
     try {
       this.setStatus('INITIALIZING OPTICAL STREAM...', 'cyan');
       this.setStepState(0, 'active');
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        if (!window.isSecureContext && window.location.protocol === 'http:') {
+          const httpsUrl = 'https://' + window.location.host + window.location.pathname;
+          if (window.Toast) {
+            window.Toast.error('Mobile browsers require HTTPS to open the camera. Please switch to HTTPS.');
+          }
+          this.setStatus('HTTPS REQUIRED FOR MOBILE CAMERA', 'red');
+          this.setStepState(0, 'failed');
+          this.state = 'FAILED';
+          return false;
+        }
+        throw new Error('Camera API not supported or blocked by browser.');
+      }
       
       const constraints = {
         video: {
@@ -108,7 +122,13 @@ class FaceVisionHUD {
       this.setStepState(0, 'failed');
       this.setStatus('OPTICAL STREAM DENIED', 'red');
       this.state = 'FAILED';
-      if (window.Toast) window.Toast.error('Camera access was denied or is unavailable.');
+      if (window.Toast) {
+        if (!window.isSecureContext && window.location.protocol === 'http:') {
+          window.Toast.error('Mobile camera requires HTTPS. Please access via https://' + window.location.host);
+        } else {
+          window.Toast.error('Camera access was denied or is unavailable. Please check browser permissions.');
+        }
+      }
       return false;
     }
   }
